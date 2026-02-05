@@ -1,7 +1,4 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.30;
-
-/// @notice minimal ERC6909 contract implementation 
+/// @notice Minimal ERC6909-style multi-token base for YES/NO shares.
 abstract contract ERC6909Minimal {
     event OperatorSet(address indexed owner, address indexed operator, bool approved);
     event Approval(
