@@ -219,7 +219,11 @@ contract MarketFactoryTest is Test {
         console.log("  Market close time was:", closeTime);
 
         // ============ STEP 5: Resolver Resolves the Market ============
-        console.log("\n--- Step 5: Resolver Resolves Market (YES wins!) ---");
+        // Randomly decide outcome - sometimes YES wins, sometimes NO wins
+        bool yesWins = uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao))) % 2 == 0;
+        
+        console.log("\n--- Step 5: Resolver Resolves Market ---");
+        console.log("  Random outcome determined:", yesWins ? "YES WINS!" : "NO WINS!");
         
         // Record ETH balances before claiming
         uint256 user1BalBefore = user1.balance;
@@ -235,91 +239,135 @@ contract MarketFactoryTest is Test {
         console.log("    User 4:", user4BalBefore);
         console.log("    User 5:", user5BalBefore);
         
-        // Resolver resolves market - YES wins!
+        // Resolver resolves market with random outcome
         vm.prank(resolver);
-        marketFactory.resolve(marketId, true); // true = YES wins
+        marketFactory.resolve(marketId, yesWins);
         
-        console.log("\n  Market resolved! YES wins!");
+        console.log("\n  Market resolved!");
         
         // Verify market is resolved
         (,, bool resolved, bool outcome,,,,,,) = marketFactory.getMarket(marketId);
         console.log("  Market resolved:", resolved);
-        console.log("  Winning outcome (true=YES):", outcome);
+        console.log("  Winning outcome (true=YES, false=NO):", outcome);
 
         // ============ STEP 6: Winners Claim Their Profits ============
-        console.log("\n--- Step 6: Winners Claim Profits ---");
+        console.log("\n--- Step 6: Claiming Phase ---");
         
-        // User 1 claims (bought YES - WINNER)
-        console.log("\nUser 1 claiming (bought YES - WINNER)...");
-        vm.prank(user1);
-        (uint256 user1Shares, uint256 user1Payout) = marketFactory.claim(marketId, user1);
-        console.log("  Shares burned:", user1Shares);
-        console.log("  ETH received:", user1Payout);
+        uint256 user1Payout;
+        uint256 user2Payout;
+        uint256 user3Payout;
+        uint256 user4Payout;
+        uint256 user5Payout;
+        uint256 user1Shares;
+        uint256 user2Shares;
+        uint256 user3Shares;
+        uint256 user4Shares;
+        uint256 user5Shares;
         
-        // User 2 claims (bought YES - WINNER)
-        console.log("\nUser 2 claiming (bought YES - WINNER)...");
-        vm.prank(user2);
-        (uint256 user2Shares, uint256 user2Payout) = marketFactory.claim(marketId, user2);
-        console.log("  Shares burned:", user2Shares);
-        console.log("  ETH received:", user2Payout);
-        
-        // User 3 claims (bought YES - WINNER)
-        console.log("\nUser 3 claiming (bought YES - WINNER)...");
-        vm.prank(user3);
-        (uint256 user3Shares, uint256 user3Payout) = marketFactory.claim(marketId, user3);
-        console.log("  Shares burned:", user3Shares);
-        console.log("  ETH received:", user3Payout);
-        
-        // User 4 tries to claim (bought NO - LOSER)
-        console.log("\nUser 4 trying to claim (bought NO - LOSER)...");
-        uint256 user4WinningBalance = marketFactory.balanceOf(user4, marketId); // YES balance = 0
-        console.log("  User 4 winning token balance:", user4WinningBalance);
-        console.log("  User 4 cannot claim - has no winning tokens!");
-        
-        // User 5 tries to claim (bought NO - LOSER)
-        console.log("\nUser 5 trying to claim (bought NO - LOSER)...");
-        uint256 user5WinningBalance = marketFactory.balanceOf(user5, marketId); // YES balance = 0
-        console.log("  User 5 winning token balance:", user5WinningBalance);
-        console.log("  User 5 cannot claim - has no winning tokens!");
+        if (yesWins) {
+            // YES wins - Users 1, 2, 3 are winners
+            console.log("\n  YES won! Users 1, 2, 3 can claim.");
+            
+            console.log("\nUser 1 claiming (bought YES - WINNER)...");
+            vm.prank(user1);
+            (user1Shares, user1Payout) = marketFactory.claim(marketId, user1);
+            console.log("  Shares burned:", user1Shares);
+            console.log("  ETH received:", user1Payout);
+            
+            console.log("\nUser 2 claiming (bought YES - WINNER)...");
+            vm.prank(user2);
+            (user2Shares, user2Payout) = marketFactory.claim(marketId, user2);
+            console.log("  Shares burned:", user2Shares);
+            console.log("  ETH received:", user2Payout);
+            
+            console.log("\nUser 3 claiming (bought YES - WINNER)...");
+            vm.prank(user3);
+            (user3Shares, user3Payout) = marketFactory.claim(marketId, user3);
+            console.log("  Shares burned:", user3Shares);
+            console.log("  ETH received:", user3Payout);
+            
+            console.log("\nUser 4 (bought NO - LOSER) - No winning tokens");
+            console.log("\nUser 5 (bought NO - LOSER) - No winning tokens");
+            
+        } else {
+            // NO wins - Users 4, 5 are winners
+            console.log("\n  NO won! Users 4, 5 can claim.");
+            
+            console.log("\nUser 1 (bought YES - LOSER) - No winning tokens");
+            console.log("\nUser 2 (bought YES - LOSER) - No winning tokens");
+            console.log("\nUser 3 (bought YES - LOSER) - No winning tokens");
+            
+            console.log("\nUser 4 claiming (bought NO - WINNER)...");
+            vm.prank(user4);
+            (user4Shares, user4Payout) = marketFactory.claim(marketId, user4);
+            console.log("  Shares burned:", user4Shares);
+            console.log("  ETH received:", user4Payout);
+            
+            console.log("\nUser 5 claiming (bought NO - WINNER)...");
+            vm.prank(user5);
+            (user5Shares, user5Payout) = marketFactory.claim(marketId, user5);
+            console.log("  Shares burned:", user5Shares);
+            console.log("  ETH received:", user5Payout);
+        }
 
         // ============ STEP 7: Print Final Results ============
         console.log("\n--- Step 7: Final Results ---");
+        console.log("\n  OUTCOME:", yesWins ? "YES WINS" : "NO WINS");
         
         console.log("\n  ETH Balances AFTER claiming:");
         console.log("    User 1:", user1.balance);
-        console.log("      profit:", user1.balance - user1BalBefore);
+        console.log("      change:", int256(user1.balance) - int256(user1BalBefore));
         console.log("    User 2:", user2.balance);
-        console.log("      profit:", user2.balance - user2BalBefore);
+        console.log("      change:", int256(user2.balance) - int256(user2BalBefore));
         console.log("    User 3:", user3.balance);
-        console.log("      profit:", user3.balance - user3BalBefore);
-        console.log("    User 4:", user4.balance, "(no change - lost bet)");
-        console.log("    User 5:", user5.balance, "(no change - lost bet)");
+        console.log("      change:", int256(user3.balance) - int256(user3BalBefore));
+        console.log("    User 4:", user4.balance);
+        console.log("      change:", int256(user4.balance) - int256(user4BalBefore));
+        console.log("    User 5:", user5.balance);
+        console.log("      change:", int256(user5.balance) - int256(user5BalBefore));
         
         console.log("\n  Profit/Loss Summary:");
-        console.log("    User 1: Spent 1 ETH, received (wei):", user1Payout);
-        console.log("      Result:", user1Payout > 1 ether ? "PROFIT" : "LOSS");
-        console.log("    User 2: Spent 1.5 ETH, received (wei):", user2Payout);
-        console.log("      Result:", user2Payout > 1.5 ether ? "PROFIT" : "LOSS");
-        console.log("    User 3: Spent 2 ETH, received (wei):", user3Payout);
-        console.log("      Result:", user3Payout > 2 ether ? "PROFIT" : "LOSS");
-        console.log("    User 4: Spent 1 ETH, received 0 = LOSS");
-        console.log("    User 5: Spent 0.5 ETH, received 0 = LOSS");
+        if (yesWins) {
+            console.log("    User 1: Spent 1 ETH, received (wei):", user1Payout);
+            console.log("      Result:", user1Payout > 1 ether ? "PROFIT" : "LOSS");
+            console.log("    User 2: Spent 1.5 ETH, received (wei):", user2Payout);
+            console.log("      Result:", user2Payout > 1.5 ether ? "PROFIT" : "LOSS");
+            console.log("    User 3: Spent 2 ETH, received (wei):", user3Payout);
+            console.log("      Result:", user3Payout > 2 ether ? "PROFIT" : "LOSS");
+            console.log("    User 4: Spent 1 ETH, received 0 = LOSS");
+            console.log("    User 5: Spent 0.5 ETH, received 0 = LOSS");
+        } else {
+            console.log("    User 1: Spent 1 ETH, received 0 = LOSS");
+            console.log("    User 2: Spent 1.5 ETH, received 0 = LOSS");
+            console.log("    User 3: Spent 2 ETH, received 0 = LOSS");
+            console.log("    User 4: Spent 1 ETH, received (wei):", user4Payout);
+            console.log("      Result:", user4Payout > 1 ether ? "PROFIT" : "LOSS");
+            console.log("    User 5: Spent 0.5 ETH, received (wei):", user5Payout);
+            console.log("      Result:", user5Payout > 0.5 ether ? "PROFIT" : "LOSS");
+        }
         
-        // Final token balances (should be 0 for winners after claiming)
+        // Final token balances
         console.log("\n  Final Token Balances:");
         console.log("    User 1 YES:", marketFactory.balanceOf(user1, marketId));
         console.log("    User 2 YES:", marketFactory.balanceOf(user2, marketId));
         console.log("    User 3 YES:", marketFactory.balanceOf(user3, marketId));
-        console.log("    User 4 NO (worthless):", marketFactory.balanceOf(user4, noId));
-        console.log("    User 5 NO (worthless):", marketFactory.balanceOf(user5, noId));
+        console.log("    User 4 NO:", marketFactory.balanceOf(user4, noId));
+        console.log("    User 5 NO:", marketFactory.balanceOf(user5, noId));
         
-        // Verify claims were successful
-        assertGt(user1Payout, 0, "User 1 should have received payout");
-        assertGt(user2Payout, 0, "User 2 should have received payout");
-        assertGt(user3Payout, 0, "User 3 should have received payout");
-        assertEq(marketFactory.balanceOf(user1, marketId), 0, "User 1 YES balance should be 0 after claim");
-        assertEq(marketFactory.balanceOf(user2, marketId), 0, "User 2 YES balance should be 0 after claim");
-        assertEq(marketFactory.balanceOf(user3, marketId), 0, "User 3 YES balance should be 0 after claim");
+        // Verify claims were successful based on outcome
+        if (yesWins) {
+            assertGt(user1Payout, 0, "User 1 should have received payout");
+            assertGt(user2Payout, 0, "User 2 should have received payout");
+            assertGt(user3Payout, 0, "User 3 should have received payout");
+            assertEq(marketFactory.balanceOf(user1, marketId), 0, "User 1 YES balance should be 0");
+            assertEq(marketFactory.balanceOf(user2, marketId), 0, "User 2 YES balance should be 0");
+            assertEq(marketFactory.balanceOf(user3, marketId), 0, "User 3 YES balance should be 0");
+        } else {
+            assertGt(user4Payout, 0, "User 4 should have received payout");
+            assertGt(user5Payout, 0, "User 5 should have received payout");
+            assertEq(marketFactory.balanceOf(user4, noId), 0, "User 4 NO balance should be 0");
+            assertEq(marketFactory.balanceOf(user5, noId), 0, "User 5 NO balance should be 0");
+        }
     }
 
     function _printTokenSupplies(uint256 marketId, uint256 noId, string memory label) internal view {
