@@ -1,54 +1,211 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-/// @notice Minimal ERC6909-style multi-token base for YES/NO shares.
-abstract contract ERC6909Minimal {
-    event OperatorSet(address indexed owner, address indexed operator, bool approved);
-    event Approval(
-        address indexed owner, address indexed spender, uint256 indexed id, uint256 amount
-    );
-    event Transfer(
-        address caller, address indexed from, address indexed to, uint256 indexed id, uint256 amount
-    );
 
-    mapping(address => mapping(address => bool)) public isOperator;
-    mapping(address => mapping(uint256 => uint256)) public balanceOf;
-    mapping(address => mapping(address => mapping(uint256 => uint256))) public allowance;
+abstract contract ERC6909 {
+    uint256 constant TRANSFER_EVENT_SIGNATURE =
+        0x1b3d7edb2e9c0b0e7c525b20aaaef0f5940d2ed71663c7d39266ecafac728859;
+    uint256 constant OPERATOR_SET_EVENT_SIGNATURE =
+        0xceb576d9f15e4e200fdb5096d64d5dfd667e16def20c1eefd14256d8e3faa267;
+    uint256 constant APPROVAL_EVENT_SIGNATURE =
+        0xb3fd5071835887567a0671151121894ddccc2842f1d10bedad13e0d17cace9a7;
+    uint256 constant ERC6909_MASTER_SLOT_SEED = 0xedcaa89a82293940;
 
-    function transfer(address receiver, uint256 id, uint256 amount) public returns (bool) {
-        balanceOf[msg.sender][id] -= amount;
-        unchecked {
-            balanceOf[receiver][id] += amount; // Safe: totalSupply is tracked
+    function balanceOf(address owner, uint256 id) public view returns (uint256 amount) {
+        assembly ("memory-safe") {
+            mstore(0x20, ERC6909_MASTER_SLOT_SEED)
+            mstore(0x14, owner)
+            mstore(0x00, id)
+            amount := sload(keccak256(0x00, 0x40))
         }
-        emit Transfer(msg.sender, msg.sender, receiver, id, amount);
-        return true;
+    }
+
+    function allowance(address owner, address spender, uint256 id)
+        public
+        view
+        returns (uint256 amount)
+    {
+        if (isOperator(owner, spender)) return type(uint256).max;
+        assembly ("memory-safe") {
+            mstore(0x34, ERC6909_MASTER_SLOT_SEED)
+            mstore(0x28, owner)
+            mstore(0x14, spender)
+            mstore(0x00, id)
+            amount := sload(keccak256(0x00, 0x54))
+            mstore(0x34, 0)
+        }
+    }
+
+    function isOperator(address owner, address spender) public view returns (bool status) {
+        assembly ("memory-safe") {
+            mstore(0x20, ERC6909_MASTER_SLOT_SEED)
+            mstore(0x14, owner)
+            mstore(0x00, spender)
+            status := sload(keccak256(0x0c, 0x34))
+        }
+    }
+
+    function transfer(address to, uint256 id, uint256 amount) public returns (bool) {
+        assembly ("memory-safe") {
+            mstore(0x20, ERC6909_MASTER_SLOT_SEED)
+            mstore(0x14, caller())
+            mstore(0x00, id)
+            let fromBalanceSlot := keccak256(0x00, 0x40)
+            let fromBalance := sload(fromBalanceSlot)
+            if gt(amount, fromBalance) {
+                mstore(0x00, 0xf4d678b8) // `InsufficientBalance()`
+                revert(0x1c, 0x04)
+            }
+            sstore(fromBalanceSlot, sub(fromBalance, amount))
+            mstore(0x14, to)
+            mstore(0x00, id)
+            let toBalanceSlot := keccak256(0x00, 0x40)
+            let toBalanceBefore := sload(toBalanceSlot)
+            let toBalanceAfter := add(toBalanceBefore, amount)
+            if lt(toBalanceAfter, toBalanceBefore) {
+                mstore(0x00, 0x89560ca1) // `BalanceOverflow()`
+                revert(0x1c, 0x04)
+            }
+            sstore(toBalanceSlot, toBalanceAfter)
+            mstore(0x00, caller())
+            mstore(0x20, amount)
+            log4(0x00, 0x40, TRANSFER_EVENT_SIGNATURE, caller(), shr(96, shl(96, to)), id)
+            mstore(0x00, 1)
+            return(0x00, 0x20)
+        }
+    }
+
+    function transferFrom(address from, address to, uint256 id, uint256 amount)
+        public
+        returns (bool)
+    {
+        assembly ("memory-safe") {
+            mstore(0x34, ERC6909_MASTER_SLOT_SEED)
+            mstore(0x28, from)
+            mstore(0x14, caller())
+            if iszero(sload(keccak256(0x20, 0x34))) {
+                mstore(0x00, id)
+                let allowanceSlot := keccak256(0x00, 0x54)
+                let allowance_ := sload(allowanceSlot)
+                if add(allowance_, 1) {
+                    if gt(amount, allowance_) {
+                        mstore(0x00, 0xdeda9030) // `InsufficientPermission()`
+                        revert(0x1c, 0x04)
+                    }
+                    sstore(allowanceSlot, sub(allowance_, amount))
+                }
+            }
+            mstore(0x14, id)
+            let fromBalanceSlot := keccak256(0x14, 0x40)
+            let fromBalance := sload(fromBalanceSlot)
+            if gt(amount, fromBalance) {
+                mstore(0x00, 0xf4d678b8) // `InsufficientBalance()`
+                revert(0x1c, 0x04)
+            }
+            sstore(fromBalanceSlot, sub(fromBalance, amount))
+            mstore(0x28, to)
+            mstore(0x14, id)
+            let toBalanceSlot := keccak256(0x14, 0x40)
+            let toBalanceBefore := sload(toBalanceSlot)
+            let toBalanceAfter := add(toBalanceBefore, amount)
+            if lt(toBalanceAfter, toBalanceBefore) {
+                mstore(0x00, 0x89560ca1) // `BalanceOverflow()`
+                revert(0x1c, 0x04)
+            }
+            sstore(toBalanceSlot, toBalanceAfter)
+            mstore(0x00, caller())
+            mstore(0x20, amount)
+            // forgefmt: disable-next-line
+            log4(0x00, 0x40, TRANSFER_EVENT_SIGNATURE, shr(96, shl(96, from)), shr(96, shl(96, to)), id)
+            mstore(0x34, 0)
+            mstore(0x00, 1)
+            return(0x00, 0x20)
+        }
     }
 
     function approve(address spender, uint256 id, uint256 amount) public returns (bool) {
-        allowance[msg.sender][spender][id] = amount;
-        emit Approval(msg.sender, spender, id, amount);
-        return true;
+        assembly ("memory-safe") {
+            mstore(0x34, ERC6909_MASTER_SLOT_SEED)
+            mstore(0x28, caller())
+            mstore(0x14, spender)
+            mstore(0x00, id)
+            sstore(keccak256(0x00, 0x54), amount)
+            mstore(0x00, amount)
+            log4(0x00, 0x20, APPROVAL_EVENT_SIGNATURE, caller(), shr(96, mload(0x20)), id)
+            mstore(0x34, 0)
+            mstore(0x00, 1)
+            return(0x00, 0x20)
+        }
     }
 
     function setOperator(address operator, bool approved) public returns (bool) {
-        isOperator[msg.sender][operator] = approved;
-        emit OperatorSet(msg.sender, operator, approved);
-        return true;
-    }
-
-    function supportsInterface(bytes4 interfaceId) public pure returns (bool) {
-        return interfaceId == 0x01ffc9a7 || interfaceId == 0x0f632fb3;
-    }
-
-    function _mint(address receiver, uint256 id, uint256 amount) internal {
-        unchecked {
-            balanceOf[receiver][id] += amount; // Safe: totalSupply is tracked
+        assembly ("memory-safe") {
+            let approvedCleaned := iszero(iszero(approved))
+            mstore(0x20, ERC6909_MASTER_SLOT_SEED)
+            mstore(0x14, caller())
+            mstore(0x00, operator)
+            sstore(keccak256(0x0c, 0x34), approvedCleaned)
+            mstore(0x20, approvedCleaned)
+            log3(0x20, 0x20, OPERATOR_SET_EVENT_SIGNATURE, caller(), shr(96, mload(0x0c)))
+            mstore(0x00, 1)
+            return(0x00, 0x20)
         }
-        emit Transfer(msg.sender, address(0), receiver, id, amount);
     }
 
-    function _burn(address sender, uint256 id, uint256 amount) internal {
-        balanceOf[sender][id] -= amount;
-        emit Transfer(msg.sender, sender, address(0), id, amount);
+    function supportsInterface(bytes4 interfaceId) public pure returns (bool result) {
+        assembly ("memory-safe") {
+            let s := shr(224, interfaceId)
+            // ERC165: 0x01ffc9a7, ERC6909: 0x0f632fb3
+            result := or(eq(s, 0x01ffc9a7), eq(s, 0x0f632fb3))
+        }
+    }
+
+    function _initMint(address to, uint256 id, uint256 amount) internal {
+        assembly ("memory-safe") {
+            mstore(0x20, ERC6909_MASTER_SLOT_SEED)
+            mstore(0x14, to)
+            mstore(0x00, id)
+            sstore(keccak256(0x00, 0x40), amount)
+            mstore(0x00, caller())
+            mstore(0x20, amount)
+            log4(0x00, 0x40, TRANSFER_EVENT_SIGNATURE, 0, shr(96, shl(96, to)), id)
+        }
+    }
+
+    function _mint(address to, uint256 id, uint256 amount) internal {
+        assembly ("memory-safe") {
+            mstore(0x20, ERC6909_MASTER_SLOT_SEED)
+            mstore(0x14, to)
+            mstore(0x00, id)
+            let toBalanceSlot := keccak256(0x00, 0x40)
+            let toBalanceBefore := sload(toBalanceSlot)
+            let toBalanceAfter := add(toBalanceBefore, amount)
+            if lt(toBalanceAfter, toBalanceBefore) {
+                mstore(0x00, 0x89560ca1) // `BalanceOverflow()`
+                revert(0x1c, 0x04)
+            }
+            sstore(toBalanceSlot, toBalanceAfter)
+            mstore(0x00, caller())
+            mstore(0x20, amount)
+            log4(0x00, 0x40, TRANSFER_EVENT_SIGNATURE, 0, shr(96, shl(96, to)), id)
+        }
+    }
+
+    function _burn(address from, uint256 id, uint256 amount) internal {
+        assembly ("memory-safe") {
+            mstore(0x20, ERC6909_MASTER_SLOT_SEED)
+            mstore(0x14, from)
+            mstore(0x00, id)
+            let fromBalanceSlot := keccak256(0x00, 0x40)
+            let fromBalance := sload(fromBalanceSlot)
+            if gt(amount, fromBalance) {
+                mstore(0x00, 0xf4d678b8) // `InsufficientBalance()`
+                revert(0x1c, 0x04)
+            }
+            sstore(fromBalanceSlot, sub(fromBalance, amount))
+            mstore(0x00, caller())
+            mstore(0x20, amount)
+            log4(0x00, 0x40, TRANSFER_EVENT_SIGNATURE, shr(96, shl(96, from)), 0, id)
+        }
     }
 }
