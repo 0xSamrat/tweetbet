@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.30;
 
-import "./ERC6909.sol";
+import {ERC6909} from "./tokens/ERC6909.sol";
 import "./utils/Math.sol";
 import "./utils/TransferHelper.sol";
 
@@ -74,6 +74,11 @@ contract PredictionAMM is ERC6909 {
         uint256 id,
         uint256 amount
     ) internal {
+        // First try to use transient balance (from deposit())
+        if (_useTransientBalance(token, id, amount)) {
+            return; // Tokens already in contract from deposit()
+        }
+        
         if (token == address(this)) {
             _burn(from, id, amount);
         } else if (id == 0) {

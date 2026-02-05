@@ -83,9 +83,6 @@ contract MarketFactory is ERC6909Minimal {
     /// @notice ETH sentinel value.
     address constant ETH = address(0);
 
-    /// @notice PredictionAMM singleton for liquidity pools.
-    IPredictionAMM public constant PredictionAMM = IPredictionAMM(0x000000000000040470635EB91b7CE4D132D616eD);
-
     /*//////////////////////////////////////////////////////////////
                                  STORAGE
     //////////////////////////////////////////////////////////////*/
@@ -166,11 +163,18 @@ contract MarketFactory is ERC6909Minimal {
         }
     }
 
+    IPredictionAMM public immutable PredictionAMM;
+
     /*//////////////////////////////////////////////////////////////
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor() payable {}
+    constructor(IPredictionAMM _predictionAMM) payable {
+
+         /// @notice PredictionAMM singleton for liquidity pools.
+    PredictionAMM = IPredictionAMM(_predictionAMM);
+
+    }
 
     /// @dev Override to skip allowance check for PredictionAMM pulling from this contract.
     function transferFrom(address sender, address receiver, uint256 id, uint256 amount) // 
