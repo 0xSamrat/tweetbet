@@ -4,53 +4,12 @@ pragma solidity ^0.8.30;
 /*//////////////////////////////////////////////////////////////
                           DEV NOTES
 //////////////////////////////////////////////////////////////
-
-CONDITION TYPES:
-  - Scalar: value = staticcall(target, callData), decoded as uint256
-  - Ratio:  value = (A * 1e18) / B, where A and B are uint256 reads
-            Threshold must be 1e18-scaled:
-              1.5x = 1.5e18, 2x = 2e18, 50% = 0.5e18, 100x = 100e18
-            If B == 0, value = type(uint256).max (prevents bricked markets)
-  - ETH Balance: pass empty callData ("") and target = account to check
-                 Returns account.balance in wei
-
-BOOLEAN SUPPORT:
-  - Functions returning bool work natively (ABI encodes bool as 32-byte word)
-  - false decodes to 0, true decodes to 1
-  - Use Op.EQ with threshold=1 for "is true", threshold=0 for "is false"
-  - Example: isActive() == true => Op.EQ, threshold=1
-
-RESOLUTION SEMANTICS:
-  - Evaluated when resolveMarket() is called, NOT at close time
-  - YES wins: condition is true when resolved
-  - NO wins:  condition is false when resolved (callable only after close, unless canClose early-resolved)
-  - canClose = true: allows early resolution once condition becomes true
-  - canClose = false: must wait until close time regardless of condition
-
-COLLATERAL:
-  - ETH:
-      - pass address(0) as collateral
-      - For *AndSeed:      msg.value = seed.collateralIn
-      - For *SeedAndBuy:   msg.value = seed.collateralIn + swap.collateralForSwap
-  - ERC20:
-      - user must approve resolver (or use permit externally)
-      - msg.value must be 0
-  - Any collateral amount works (1:1 shares, no dust)
-
-SEED + BUY:
-  - *SeedAndBuy functions do NOT set target odds
-  - They seed LP then execute buyYes/buyNo to take an initial position
-  - Resulting odds depend on pool size, swap amount, and fees
-
-MULTICALL:
-  - Supports batching multiple operations in one transaction
-  - ETH multicall with multiple seed / buy ops is NOT supported
-    (each ETH function enforces strict msg.value expectations)
-  - Use separate transactions for multiple ETH markets, or use ERC20
-
+- This contract serves as a resolver for PredictionAMM markets, allowing market creators to define custom on-chain conditions
+  for market resolution based on arbitrary staticcall reads. It supports both scalar and ratio conditions, as well
+  as early resolution based on canClose parameter.
 //////////////////////////////////////////////////////////////*/
 
-interface IPAMM {
+interface IPredictionAMM {
     function createMarket(
         string calldata description,
         address resolver,
@@ -115,7 +74,7 @@ interface IPAMM {
 }
 
 /// @title Resolver
-/// @notice On-chain oracle for PAMM markets based on arbitrary staticcall reads.
+/// @notice On-chain oracle for PredictionAMM markets based on arbitrary staticcall reads.
 /// @dev Scalar: value = staticcall(target, callData). Ratio: value = A * 1e18 / B.
 ///      Outcome determined by condition value when resolveMarket() is called.
 ///      canClose=true allows early resolution when condition becomes true.
@@ -144,11 +103,13 @@ contract Resolver {
                                 CONSTANTS
     //////////////////////////////////////////////////////////////*/
 
-    address public constant PAMM = 0x000000000044bfe6c2BBFeD8862973E0612f07C0;
+    address public immutable PredictionAMM;
 
     receive() external payable {}
 
-    constructor() payable {}
+    constructor(address _PredictionAMM) payable {
+        PredictionAMM = _PredictionAMM;
+    }
 
     /*//////////////////////////////////////////////////////////////
                               REENTRANCY
@@ -374,7 +335,7 @@ contract Resolver {
 
         string memory description = _buildDescription(observable, op, threshold, close, canClose);
         (marketId, noId) =
-            IPAMM(PAMM).createMarket(description, address(this), collateral, close, canClose);
+            IPredictionAMM(PredictionAMM).createMarket(description, address(this), collateral, close, canClose);
         conditions[marketId] = Condition(target, address(0), op, false, threshold, callData, "");
         emit ConditionCreated(marketId, target, op, threshold, close, canClose, false, description);
     }
@@ -512,7 +473,7 @@ contract Resolver {
 
         string memory description = _buildDescription(observable, op, threshold, close, canClose);
         (marketId, noId) =
-            IPAMM(PAMM).createMarket(description, address(this), collateral, close, canClose);
+            IPredictionAMM(PredictionAMM).createMarket(description, address(this), collateral, close, canClose);
         conditions[marketId] =
             Condition(targetA, targetB, op, true, threshold, callDataA, callDataB);
         emit ConditionCreated(marketId, targetA, op, threshold, close, canClose, true, description);
@@ -680,7 +641,7 @@ contract Resolver {
     }
 
     /*//////////////////////////////////////////////////////////////
-                     REGISTER FOR EXISTING PAMM MARKET
+                     REGISTER FOR EXISTING PredictionAMM MARKET
     //////////////////////////////////////////////////////////////*/
 
     function registerConditionForExistingMarket(
@@ -716,7 +677,7 @@ contract Resolver {
         if (conditions[marketId].targetA != address(0)) revert ConditionExists();
 
         (address resolver,, bool resolved,, bool canClose, uint64 close,,,,) =
-            IPAMM(PAMM).getMarket(marketId);
+            IPredictionAMM(PredictionAMM).getMarket(marketId);
         if (resolver != address(this)) revert NotResolverMarket();
         if (resolved) revert MarketResolved();
 
@@ -767,7 +728,7 @@ contract Resolver {
         if (conditions[marketId].targetA != address(0)) revert ConditionExists();
 
         (address resolver,, bool resolved,, bool canClose, uint64 close,,,,) =
-            IPAMM(PAMM).getMarket(marketId);
+            IPredictionAMM(PredictionAMM).getMarket(marketId);
         if (resolver != address(this)) revert NotResolverMarket();
         if (resolved) revert MarketResolved();
 
@@ -785,7 +746,7 @@ contract Resolver {
         if (c.targetA == address(0)) revert Unknown();
 
         (address resolver,, bool resolved,, bool canClose, uint64 close,,,,) =
-            IPAMM(PAMM).getMarket(marketId);
+            IPredictionAMM(PredictionAMM).getMarket(marketId);
         if (resolver != address(this)) revert NotResolverMarket();
         if (resolved) revert MarketResolved();
 
@@ -795,12 +756,12 @@ contract Resolver {
         if (condTrue) {
             if (block.timestamp < close) {
                 if (!canClose) revert Pending();
-                IPAMM(PAMM).closeMarket(marketId);
+                IPredictionAMM(PredictionAMM).closeMarket(marketId);
             }
-            IPAMM(PAMM).resolve(marketId, true);
+            IPredictionAMM(PredictionAMM).resolve(marketId, true);
         } else {
             if (block.timestamp < close) revert Pending();
-            IPAMM(PAMM).resolve(marketId, false);
+            IPredictionAMM(PredictionAMM).resolve(marketId, false);
         }
 
         delete conditions[marketId];
@@ -818,7 +779,7 @@ contract Resolver {
         Condition storage c = conditions[marketId];
         if (c.targetA == address(0)) return (0, false, false);
 
-        (,,,, bool canClose, uint64 close,,,,) = IPAMM(PAMM).getMarket(marketId);
+        (,,,, bool canClose, uint64 close,,,,) = IPredictionAMM(PredictionAMM).getMarket(marketId);
         value = _currentValue(c);
         condTrue = _compare(value, c.op, c.threshold);
         ready = (block.timestamp >= close) || (condTrue && canClose);
@@ -917,7 +878,7 @@ contract Resolver {
     ) internal returns (uint256 shares, uint256 liquidity) {
         if (collateral == address(0)) {
             if (msg.value != p.collateralIn + extraETH) revert InvalidETHAmount();
-            (shares, liquidity) = IPAMM(PAMM).splitAndAddLiquidity{value: p.collateralIn}(
+            (shares, liquidity) = IPredictionAMM(PredictionAMM).splitAndAddLiquidity{value: p.collateralIn}(
                 marketId,
                 p.collateralIn,
                 p.feeOrHook,
@@ -930,8 +891,8 @@ contract Resolver {
         } else {
             if (msg.value != 0) revert InvalidETHAmount();
             safeTransferFrom(collateral, msg.sender, address(this), p.collateralIn);
-            ensureApproval(collateral, PAMM);
-            (shares, liquidity) = IPAMM(PAMM)
+            ensureApproval(collateral, PredictionAMM);
+            (shares, liquidity) = IPredictionAMM(PredictionAMM)
                 .splitAndAddLiquidity(
                     marketId,
                     p.collateralIn,
@@ -946,15 +907,15 @@ contract Resolver {
     }
 
     function _flushLeftoverShares(uint256 marketId) internal {
-        uint256 yesLeft = IPAMM(PAMM).balanceOf(address(this), marketId);
+        uint256 yesLeft = IPredictionAMM(PredictionAMM).balanceOf(address(this), marketId);
         if (yesLeft != 0) {
-            IPAMM(PAMM).transfer(msg.sender, marketId, yesLeft);
+            IPredictionAMM(PredictionAMM).transfer(msg.sender, marketId, yesLeft);
         }
 
-        uint256 noIdLocal = IPAMM(PAMM).getNoId(marketId);
-        uint256 noLeft = IPAMM(PAMM).balanceOf(address(this), noIdLocal);
+        uint256 noIdLocal = IPredictionAMM(PredictionAMM).getNoId(marketId);
+        uint256 noLeft = IPredictionAMM(PredictionAMM).balanceOf(address(this), noIdLocal);
         if (noLeft != 0) {
-            IPAMM(PAMM).transfer(msg.sender, noIdLocal, noLeft);
+            IPredictionAMM(PredictionAMM).transfer(msg.sender, noIdLocal, noLeft);
         }
     }
 
@@ -985,7 +946,7 @@ contract Resolver {
 
         if (collateral != address(0)) {
             safeTransferFrom(collateral, msg.sender, address(this), s.collateralForSwap);
-            ensureApproval(collateral, PAMM);
+            ensureApproval(collateral, PredictionAMM);
         }
 
         // Use specified recipient or fallback to msg.sender
@@ -993,16 +954,16 @@ contract Resolver {
 
         if (s.yesForNo) {
             amountOut = collateral != address(0)
-                ? IPAMM(PAMM)
+                ? IPredictionAMM(PredictionAMM)
                     .buyNo(marketId, s.collateralForSwap, s.minOut, 0, feeOrHook, to, deadline)
-                : IPAMM(PAMM).buyNo{value: s.collateralForSwap}(
+                : IPredictionAMM(PredictionAMM).buyNo{value: s.collateralForSwap}(
                     marketId, 0, s.minOut, 0, feeOrHook, to, deadline
                 );
         } else {
             amountOut = collateral != address(0)
-                ? IPAMM(PAMM)
+                ? IPredictionAMM(PredictionAMM)
                     .buyYes(marketId, s.collateralForSwap, s.minOut, 0, feeOrHook, to, deadline)
-                : IPAMM(PAMM).buyYes{value: s.collateralForSwap}(
+                : IPredictionAMM(PredictionAMM).buyYes{value: s.collateralForSwap}(
                     marketId, 0, s.minOut, 0, feeOrHook, to, deadline
                 );
         }
