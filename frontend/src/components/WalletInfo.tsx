@@ -17,8 +17,8 @@ export function WalletInfo() {
 
   if (!address) return null;
 
-  const walletLabel = walletType === "passkey" ? "🔐 Passkey Wallet" : "🦊 MetaMask";
   const gasLabel = walletType === "passkey" ? "Gasless" : "Requires Gas";
+  const walletLabel = walletType === "passkey" ? "🔐 Passkey" : "🦊 MetaMask";
   const truncatedAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
 
   const handleCopy = async () => {

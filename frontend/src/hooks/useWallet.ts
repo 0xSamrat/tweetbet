@@ -1,16 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { type Hex, type Address } from "viem";
+import { type Hex, type Address, type Chain } from "viem";
+import { arcTestnet } from "viem/chains";
 import {
   usePasskeyWallet,
   type UsePasskeyWalletReturn,
 } from "./usePasskeyWallet";
-import { useEOAWallet, type UseEOAWalletReturn } from "./useEOAWallet";
+import { useEOAWallet, type UseEOAWalletReturn, type SupportedChainId, SUPPORTED_CHAINS } from "./useEOAWallet";
 
 // Re-export individual hooks for direct usage
 export { usePasskeyWallet } from "./usePasskeyWallet";
-export { useEOAWallet } from "./useEOAWallet";
+export { useEOAWallet, SUPPORTED_CHAINS } from "./useEOAWallet";
+export type { SupportedChainId } from "./useEOAWallet";
 
 // Wallet type
 export type WalletType = "passkey" | "eoa" | null;
@@ -24,6 +26,11 @@ export interface UnifiedWalletState {
 
   // Address (works for both wallet types)
   address: Address | undefined;
+
+  // Chain info
+  chainId: number | undefined;
+  chainName: string | undefined;
+  chain: Chain | undefined;
 
   // Loading & error
   isLoading: boolean;
@@ -44,6 +51,7 @@ export interface UnifiedWalletActions {
 
   // EOA actions
   connectMetaMask: () => Promise<void>;
+  switchChain: (chainId: SupportedChainId) => Promise<void>;
 
   // Common actions
   logout: () => void;
@@ -61,6 +69,8 @@ export interface UseWalletReturn
   // Access to underlying wallet hooks if needed
   passkeyWallet: UsePasskeyWalletReturn;
   eoaWallet: UseEOAWalletReturn;
+  // Supported chains for EOA
+  supportedChains: typeof SUPPORTED_CHAINS;
 }
 
 // Unified Wallet Hook - combines passkey and EOA wallets
@@ -84,6 +94,23 @@ export function useWalletCore(): UseWalletReturn {
     if (walletType === "eoa") return eoaWallet.address;
     return undefined;
   }, [walletType, passkeyWallet.account?.address, eoaWallet.address]);
+
+  // Chain info
+  const chainId = React.useMemo(() => {
+    if (walletType === "passkey") return arcTestnet.id;
+    if (walletType === "eoa") return eoaWallet.chainId;
+    return undefined;
+  }, [walletType, eoaWallet.chainId]);
+
+  const chain = React.useMemo(() => {
+    if (walletType === "passkey") return arcTestnet;
+    if (walletType === "eoa") return eoaWallet.chain;
+    return undefined;
+  }, [walletType, eoaWallet.chain]);
+
+  const chainName = React.useMemo(() => {
+    return chain?.name;
+  }, [chain]);
 
   const isLoading = passkeyWallet.isLoading || eoaWallet.isLoading;
   const error = passkeyWallet.error || eoaWallet.error;
@@ -142,6 +169,9 @@ export function useWalletCore(): UseWalletReturn {
     isReady,
     walletType,
     address,
+    chainId,
+    chainName,
+    chain,
     isLoading,
     error,
     usdcBalance,
@@ -154,6 +184,7 @@ export function useWalletCore(): UseWalletReturn {
 
     // EOA actions
     connectMetaMask: eoaWallet.connectMetaMask,
+    switchChain: eoaWallet.switchChain,
 
     // Common actions
     logout,
@@ -164,6 +195,9 @@ export function useWalletCore(): UseWalletReturn {
     // Access to underlying hooks
     passkeyWallet,
     eoaWallet,
+    
+    // Supported chains
+    supportedChains: SUPPORTED_CHAINS,
   };
 }
 

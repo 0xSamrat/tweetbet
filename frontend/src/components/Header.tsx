@@ -5,11 +5,25 @@ import { useWallet } from "@/contexts/WalletContext";
 import { WalletConnect } from "@/components/WalletConnect";
 import { WalletInfo } from "@/components/WalletInfo";
 import { SendUSDC } from "@/components/SendUSDC";
+import { arcTestnet, baseSepolia } from "viem/chains";
+import type { SupportedChainId } from "@/hooks/useWallet";
 
 export function Header() {
-  const { isConnected, walletType, address, logout } = useWallet();
+  const { isConnected, walletType, address, chainId, chainName, switchChain, isLoading, logout } = useWallet();
   const [showModal, setShowModal] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showChainDropdown, setShowChainDropdown] = useState(false);
+
+  // Chain options for MetaMask
+  const chainOptions = [
+    { id: arcTestnet.id as SupportedChainId, name: "ARC Testnet", icon: "🔵" },
+    { id: baseSepolia.id as SupportedChainId, name: "Base Sepolia", icon: "🔷" },
+  ];
+
+  const handleSwitchChain = async (targetChainId: SupportedChainId) => {
+    await switchChain(targetChainId);
+    setShowChainDropdown(false);
+  };
 
   const handleSignInClick = () => {
     setShowModal(true);
@@ -47,9 +61,6 @@ export function Header() {
                   onClick={() => setShowDropdown(!showDropdown)}
                   className="flex items-center gap-2 rounded-full bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
                 >
-                  <span className="text-base">
-                    {walletType === "passkey" ? "🔐" : "🦊"}
-                  </span>
                   <span>{formatAddress(address)}</span>
                   <svg
                     className={`h-4 w-4 transition-transform ${showDropdown ? "rotate-180" : ""}`}
@@ -69,16 +80,71 @@ export function Header() {
                       onClick={() => setShowDropdown(false)}
                     />
                     <div className="absolute right-0 top-full z-[60] mt-2 w-80 sm:w-96 rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
-                      {/* Header */}
+                      {/* Header with Network Switcher */}
                       <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg">
-                            {walletType === "passkey" ? "🔐" : "🦊"}
-                          </span>
-                          <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                            {walletType === "passkey" ? "Passkey Wallet" : "MetaMask"}
-                          </span>
+                        {/* Network Switcher - Left Side */}
+                        <div className="relative">
+                          {walletType === "passkey" ? (
+                            // Passkey - fixed network, just show label
+                            <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400 px-2 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800">
+                              <span>🔵</span>
+                              <span>ARC Testnet</span>
+                            </div>
+                          ) : (
+                            // MetaMask - can switch networks
+                            <>
+                              <button
+                                onClick={() => setShowChainDropdown(!showChainDropdown)}
+                                disabled={isLoading}
+                                className="flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400 px-2 py-1 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 transition disabled:opacity-50"
+                              >
+                                <span>{chainId === arcTestnet.id ? "🔵" : "🔷"}</span>
+                                <span>{chainName || "Unknown"}</span>
+                                <svg
+                                  className={`h-3 w-3 transition-transform ${showChainDropdown ? "rotate-180" : ""}`}
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </button>
+                              
+                              {showChainDropdown && (
+                                <>
+                                  <div
+                                    className="fixed inset-0 z-10"
+                                    onClick={() => setShowChainDropdown(false)}
+                                  />
+                                  <div className="absolute left-0 top-full z-20 mt-1 w-36 rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-800">
+                                    {chainOptions.map((chain) => (
+                                      <button
+                                        key={chain.id}
+                                        onClick={() => handleSwitchChain(chain.id)}
+                                        disabled={chain.id === chainId || isLoading}
+                                        className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs transition first:rounded-t-lg last:rounded-b-lg ${
+                                          chain.id === chainId
+                                            ? "bg-blue-50 text-blue-900 dark:bg-blue-900/30 dark:text-blue-300"
+                                            : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                                        } disabled:opacity-50`}
+                                      >
+                                        <span>{chain.icon}</span>
+                                        <span>{chain.name}</span>
+                                        {chain.id === chainId && (
+                                          <svg className="ml-auto h-3 w-3 text-blue-600 dark:text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                          </svg>
+                                        )}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </>
+                              )}
+                            </>
+                          )}
                         </div>
+                        
+                        {/* Close Button - Right Side */}
                         <button
                           onClick={() => setShowDropdown(false)}
                           className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
