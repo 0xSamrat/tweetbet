@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { type Hex, createPublicClient, parseUnits } from "viem";
-import { polygonAmoy } from "viem/chains";
+import { type Hex, createPublicClient, parseUnits, formatUnits, erc20Abi, parseGwei } from "viem";
+import { arcTestnet } from "viem/chains";
 import {
   type P256Credential,
   type SmartAccount,
@@ -29,17 +29,17 @@ const USDC_DECIMALS = 6;
 
 // Create Circle transports (outside component)
 const passkeyTransport = toPasskeyTransport(clientUrl, clientKey);
-const modularTransport = toModularTransport(`${clientUrl}/polygonAmoy`, clientKey);
+const modularTransport = toModularTransport(`${clientUrl}/arcTestnet`, clientKey);
 
 // Create a public client
 const client = createPublicClient({
-  chain: polygonAmoy,
+  chain: arcTestnet,
   transport: modularTransport,
 });
 
 // Create a bundler client
 const bundlerClient = createBundlerClient({
-  chain: polygonAmoy,
+  chain: arcTestnet,
   transport: modularTransport,
 });
 
@@ -51,6 +51,28 @@ export default function Home() {
   const [userOpHash, setUserOpHash] = React.useState<Hex>();
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [usdcBalance, setUsdcBalance] = React.useState<string>("0");
+  const [isLoadingBalance, setIsLoadingBalance] = React.useState(false);
+
+  // Fetch USDC balance
+  const fetchBalance = React.useCallback(async () => {
+    if (!account?.address) return;
+
+    setIsLoadingBalance(true);
+    try {
+      const balance = await client.readContract({
+        address: ContractAddress.ArcTestnet_USDC,
+        abi: erc20Abi,
+        functionName: "balanceOf",
+        args: [account.address],
+      });
+      setUsdcBalance(formatUnits(balance, USDC_DECIMALS));
+    } catch (err) {
+      console.error("Failed to fetch balance:", err);
+    } finally {
+      setIsLoadingBalance(false);
+    }
+  }, [account?.address]);
 
   // Load credential from localStorage on mount
   React.useEffect(() => {
@@ -74,6 +96,13 @@ export default function Home() {
       name: username,
     }).then(setAccount);
   }, [credential, username]);
+
+  // Fetch balance when account is available
+  React.useEffect(() => {
+    if (account?.address) {
+      fetchBalance();
+    }
+  }, [account?.address, fetchBalance]);
 
   const register = async () => {
     const usernameInput = (document.getElementById("username") as HTMLInputElement).value;
@@ -149,7 +178,7 @@ export default function Home() {
       // Create callData for USDC transfer
       const callData = encodeTransfer(
         to,
-        ContractAddress.PolygonAmoy_USDC,
+        ContractAddress.ArcTestnet_USDC,
         parseUnits(value, USDC_DECIMALS)
       );
 
@@ -157,6 +186,9 @@ export default function Home() {
         account,
         calls: [callData],
         paymaster: true,
+        // ARC testnet requires minimum 1 gwei priority fee
+        maxPriorityFeePerGas: parseGwei("1"),
+        maxFeePerGas: parseGwei("50"),
       });
       setUserOpHash(opHash);
 
@@ -164,6 +196,8 @@ export default function Home() {
         hash: opHash,
       });
       setHash(receipt.transactionHash);
+      // Refresh balance after successful transaction
+      fetchBalance();
     } catch (err) {
       console.error("Transaction failed:", err);
       setError(err instanceof Error ? err.message : "Transaction failed");
@@ -259,6 +293,22 @@ export default function Home() {
           </p>
         </div>
 
+        <div className="rounded-lg bg-purple-50 p-4 dark:bg-purple-900/20">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-medium text-purple-800 dark:text-purple-400">💰 USDC Balance</p>
+            <button
+              onClick={fetchBalance}
+              disabled={isLoadingBalance}
+              className="text-xs text-purple-600 hover:text-purple-800 dark:text-purple-400 dark:hover:text-purple-300"
+            >
+              {isLoadingBalance ? "..." : "↻ Refresh"}
+            </button>
+          </div>
+          <p className="mt-1 text-2xl font-bold text-purple-900 dark:text-purple-300">
+            {isLoadingBalance ? "..." : `$${parseFloat(usdcBalance).toFixed(2)}`}
+          </p>
+        </div>
+
         <form onSubmit={sendUserOperation} className="space-y-4">
           <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
             Send USDC (Gasless)
@@ -307,12 +357,12 @@ export default function Home() {
               ✅ Transaction Confirmed!
             </p>
             <a
-              href={`https://amoy.polygonscan.com/tx/${hash}`}
+              href={`https://testnet.arcscan.app/tx/${hash}`}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-1 block break-all font-mono text-xs text-green-600 underline hover:text-green-800 dark:text-green-500"
             >
-              View on PolygonScan →
+              View on ArcScan →
             </a>
           </div>
         )}
