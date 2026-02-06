@@ -51,9 +51,11 @@ export function GatewayTransfer({ address, onSuccess }: GatewayTransferProps) {
       const toTake = Math.min(available, remaining);
 
       if (toTake > 0.000001) { // Avoid dust amounts
+        // Floor to 6 decimals to avoid rounding up beyond available balance
+        const flooredAmount = Math.floor(toTake * 1000000) / 1000000;
         sources.push({
           chain: balance.chainKey,
-          amount: toTake.toFixed(6),
+          amount: flooredAmount.toFixed(6),
         });
         remaining -= toTake;
       }

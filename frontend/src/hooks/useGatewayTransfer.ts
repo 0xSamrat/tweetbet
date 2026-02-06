@@ -57,7 +57,7 @@ const chains = {
   baseSepolia,
 };
 
-const MAX_FEE = BigInt(2_010000); // Max fee in USDC (6 decimals)
+const MAX_FEE = BigInt(20000); // Max fee in USDC (6 decimals) - 0.02 USDC
 
 // Generate random salt for burn intent
 function generateSalt(): Hex {
