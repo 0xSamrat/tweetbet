@@ -86,52 +86,8 @@ export function useEOAWallet(): UseEOAWalletReturn {
   const isReady = !!address && !!chainId;
   const chain = chainId ? (chainId === arcTestnet.id ? arcTestnet : baseSepolia) : undefined;
 
-  // Check for existing connection on mount
-  React.useEffect(() => {
-    const storedAddress = localStorage.getItem("eoa_address");
-    const storedChainId = localStorage.getItem("eoa_chain_id");
-    const walletType = localStorage.getItem("wallet_type");
-
-    if (storedAddress && walletType === "eoa") {
-      // Verify the connection is still valid
-      checkExistingConnection(storedAddress as Address, storedChainId ? parseInt(storedChainId) as SupportedChainId : arcTestnet.id);
-    }
-  }, []);
-
-  const checkExistingConnection = async (storedAddress: Address, storedChainId: SupportedChainId) => {
-    if (typeof window === "undefined" || !window.ethereum) return;
-
-    try {
-      const accounts = (await window.ethereum.request({
-        method: "eth_accounts",
-      })) as Address[];
-
-      if (accounts.length > 0 && accounts[0].toLowerCase() === storedAddress.toLowerCase()) {
-        setAddress(accounts[0]);
-        
-        // Get current chain
-        const currentChainId = await window.ethereum.request({
-          method: "eth_chainId",
-        }) as string;
-        const parsedChainId = parseInt(currentChainId, 16) as SupportedChainId;
-        
-        // Check if it's a supported chain
-        if (parsedChainId === arcTestnet.id || parsedChainId === baseSepolia.id) {
-          setChainId(parsedChainId);
-          localStorage.setItem("eoa_chain_id", parsedChainId.toString());
-        } else {
-          setChainId(storedChainId);
-        }
-      } else {
-        // Connection no longer valid
-        localStorage.removeItem("eoa_address");
-        localStorage.removeItem("eoa_chain_id");
-        localStorage.removeItem("wallet_type");
-      }
-    } catch {
-      console.error("Failed to check existing connection");
-    }
-  };
+  // No auto-reconnect from localStorage - user must click Connect MetaMask each time
+  // This ensures MetaMask popup always appears for explicit user consent
 
   // Listen for account and chain changes
   React.useEffect(() => {
@@ -145,7 +101,6 @@ export function useEOAWallet(): UseEOAWalletReturn {
       } else if (address && accountsArray[0].toLowerCase() !== address.toLowerCase()) {
         // Account changed
         setAddress(accountsArray[0]);
-        localStorage.setItem("eoa_address", accountsArray[0]);
       }
     };
 
@@ -153,7 +108,6 @@ export function useEOAWallet(): UseEOAWalletReturn {
       const parsedChainId = parseInt(newChainId as string, 16) as SupportedChainId;
       if (parsedChainId === arcTestnet.id || parsedChainId === baseSepolia.id) {
         setChainId(parsedChainId);
-        localStorage.setItem("eoa_chain_id", parsedChainId.toString());
       }
     };
 
@@ -164,6 +118,7 @@ export function useEOAWallet(): UseEOAWalletReturn {
       window.ethereum?.removeListener?.("accountsChanged", handleAccountsChanged);
       window.ethereum?.removeListener?.("chainChanged", handleChainChanged);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address]);
 
   // Fetch balance
@@ -235,7 +190,6 @@ export function useEOAWallet(): UseEOAWalletReturn {
       }
 
       setChainId(targetChainId);
-      localStorage.setItem("eoa_chain_id", targetChainId.toString());
     } catch (err) {
       console.error("Failed to switch chain:", err);
       setError(err instanceof Error ? err.message : "Failed to switch chain");
@@ -255,9 +209,16 @@ export function useEOAWallet(): UseEOAWalletReturn {
     setError(null);
 
     try {
-      // Request account access
+      // Force MetaMask popup by requesting permissions (not just accounts)
+      // This always shows the account selection popup
+      await window.ethereum.request({
+        method: "wallet_requestPermissions",
+        params: [{ eth_accounts: {} }],
+      });
+
+      // Now get the selected accounts
       const accounts = (await window.ethereum.request({
-        method: "eth_requestAccounts",
+        method: "eth_accounts",
       })) as Address[];
 
       if (accounts.length === 0) {
@@ -294,9 +255,7 @@ export function useEOAWallet(): UseEOAWalletReturn {
       const connectedAddress = accounts[0];
       setAddress(connectedAddress);
       setChainId(arcTestnet.id);
-      localStorage.setItem("eoa_address", connectedAddress);
-      localStorage.setItem("eoa_chain_id", arcTestnet.id.toString());
-      localStorage.setItem("wallet_type", "eoa");
+      // No localStorage caching - require explicit connect each session
     } catch (err) {
       console.error("MetaMask connection failed:", err);
       setError(err instanceof Error ? err.message : "Failed to connect MetaMask");
@@ -308,9 +267,6 @@ export function useEOAWallet(): UseEOAWalletReturn {
 
   // Disconnect MetaMask
   const disconnectMetaMask = React.useCallback(() => {
-    localStorage.removeItem("eoa_address");
-    localStorage.removeItem("eoa_chain_id");
-    localStorage.removeItem("wallet_type");
     setAddress(undefined);
     setChainId(undefined);
     setUsdcBalance("0");

@@ -5,14 +5,18 @@ import { useWallet } from "@/contexts/WalletContext";
 import { WalletConnect } from "@/components/WalletConnect";
 import { WalletInfo } from "@/components/WalletInfo";
 import { SendUSDC } from "@/components/SendUSDC";
+import { GatewayDeposit } from "@/components/GatewayDeposit";
+import { GatewayTransfer } from "@/components/GatewayTransfer";
 import { arcTestnet, baseSepolia } from "viem/chains";
 import type { SupportedChainId } from "@/hooks/useWallet";
+import type { Address } from "viem";
 
 export function Header() {
   const { isConnected, walletType, address, chainId, chainName, switchChain, isLoading, logout } = useWallet();
   const [showModal, setShowModal] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showChainDropdown, setShowChainDropdown] = useState(false);
+  const [activeTab, setActiveTab] = useState<"send" | "deposit" | "transfer">("send");
 
   // Chain options for MetaMask
   const chainOptions = [
@@ -159,11 +163,65 @@ export function Header() {
                       <div className="space-y-4">
                         <WalletInfo />
                         
-                        {/* Divider */}
-                        <div className="h-px bg-zinc-200 dark:bg-zinc-700" />
+                        {/* Tabs for MetaMask users */}
+                        {walletType === "eoa" && (
+                          <>
+                            <div className="h-px bg-zinc-200 dark:bg-zinc-700" />
+                            
+                            {/* Tab Navigation */}
+                            <div className="flex border-b border-zinc-200 dark:border-zinc-700">
+                              <button
+                                onClick={() => setActiveTab("send")}
+                                className={`flex-1 py-2 text-xs font-medium transition-colors ${
+                                  activeTab === "send"
+                                    ? "text-blue-600 border-b-2 border-blue-600"
+                                    : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                }`}
+                              >
+                                💸 Send
+                              </button>
+                              <button
+                                onClick={() => setActiveTab("deposit")}
+                                className={`flex-1 py-2 text-xs font-medium transition-colors ${
+                                  activeTab === "deposit"
+                                    ? "text-purple-600 border-b-2 border-purple-600"
+                                    : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                }`}
+                              >
+                                🏦 Deposit
+                              </button>
+                              <button
+                                onClick={() => setActiveTab("transfer")}
+                                className={`flex-1 py-2 text-xs font-medium transition-colors ${
+                                  activeTab === "transfer"
+                                    ? "text-green-600 border-b-2 border-green-600"
+                                    : "text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                }`}
+                              >
+                                ⚡ Transfer
+                              </button>
+                            </div>
+
+                            {/* Tab Content */}
+                            <div className="mt-4">
+                              {activeTab === "send" && <SendUSDC />}
+                              {activeTab === "deposit" && (
+                                <GatewayDeposit address={address as Address} />
+                              )}
+                              {activeTab === "transfer" && (
+                                <GatewayTransfer address={address as Address} />
+                              )}
+                            </div>
+                          </>
+                        )}
                         
-                        {/* Send USDC */}
-                        <SendUSDC />
+                        {/* Passkey: Just show SendUSDC */}
+                        {walletType === "passkey" && (
+                          <>
+                            <div className="h-px bg-zinc-200 dark:bg-zinc-700" />
+                            <SendUSDC />
+                          </>
+                        )}
                         
                         {/* Divider */}
                         <div className="h-px bg-zinc-200 dark:bg-zinc-700" />
