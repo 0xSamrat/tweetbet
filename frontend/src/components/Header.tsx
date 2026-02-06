@@ -83,7 +83,7 @@ export function Header() {
                       className="fixed inset-0 z-50"
                       onClick={() => setShowDropdown(false)}
                     />
-                    <div className="absolute right-0 top-full z-[60] mt-2 w-80 sm:w-96 rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
+                    <div className="absolute right-0 top-full z-[60] mt-2 w-80 sm:w-96 max-h-[80vh] overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-6 shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
                       {/* Header with Network Switcher */}
                       <div className="flex items-center justify-between mb-4">
                         {/* Network Switcher - Left Side */}
