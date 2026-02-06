@@ -4,7 +4,8 @@ import { useWallet } from "@/contexts/WalletContext";
 
 export function WalletInfo() {
   const {
-    account,
+    address,
+    walletType,
     usdcBalance,
     isLoadingBalance,
     fetchBalance,
@@ -12,7 +13,10 @@ export function WalletInfo() {
     error,
   } = useWallet();
 
-  if (!account) return null;
+  if (!address) return null;
+
+  const walletLabel = walletType === "passkey" ? "🔐 Passkey Wallet" : "🦊 MetaMask";
+  const gasLabel = walletType === "passkey" ? "Gasless" : "Requires Gas";
 
   return (
     <div className="space-y-4">
@@ -35,11 +39,19 @@ export function WalletInfo() {
       )}
 
       <div className="rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
-        <p className="text-sm font-medium text-green-800 dark:text-green-400">
-          ✅ Connected
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium text-green-800 dark:text-green-400">
+            ✅ Connected
+          </p>
+          <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-800/30 dark:text-green-300">
+            {walletLabel}
+          </span>
+        </div>
         <p className="mt-1 break-all font-mono text-xs text-green-600 dark:text-green-500">
-          {account.address}
+          {address}
+        </p>
+        <p className="mt-1 text-xs text-green-600/70 dark:text-green-500/70">
+          {gasLabel}
         </p>
       </div>
 

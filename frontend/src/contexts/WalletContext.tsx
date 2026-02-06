@@ -3,6 +3,9 @@
 import * as React from "react";
 import { useWalletCore, type UseWalletReturn } from "@/hooks/useWallet";
 
+// Re-export types
+export type { UseWalletReturn, WalletType } from "@/hooks/useWallet";
+
 const WalletContext = React.createContext<UseWalletReturn | null>(null);
 
 export function WalletProvider({ children }: { children: React.ReactNode }) {

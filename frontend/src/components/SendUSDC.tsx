@@ -1,11 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { type Hex } from "viem";
+import { type Hex, type Address } from "viem";
 import { useWallet } from "@/contexts/WalletContext";
 
 export function SendUSDC() {
-  const { sendUSDC, isLoading, isReady } = useWallet();
+  const { sendUSDC, isLoading, isReady, walletType } = useWallet();
   const [userOpHash, setUserOpHash] = React.useState<Hex>();
   const [txHash, setTxHash] = React.useState<Hex>();
   const [localError, setLocalError] = React.useState<string | null>(null);
@@ -17,12 +17,14 @@ export function SendUSDC() {
     setLocalError(null);
 
     const formData = new FormData(event.currentTarget);
-    const to = formData.get("to") as `0x${string}`;
+    const to = formData.get("to") as Address;
     const value = formData.get("value") as string;
 
     try {
       const result = await sendUSDC(to, value);
-      setUserOpHash(result.userOpHash);
+      if (result.userOpHash) {
+        setUserOpHash(result.userOpHash);
+      }
       setTxHash(result.txHash);
     } catch (err) {
       setLocalError(err instanceof Error ? err.message : "Transaction failed");
@@ -31,16 +33,26 @@ export function SendUSDC() {
 
   if (!isReady) return null;
 
+  const isGasless = walletType === "passkey";
+  const buttonLabel = isGasless ? "💸 Send USDC (Gasless)" : "💸 Send USDC";
+  const titleLabel = isGasless ? "Send USDC (Gasless)" : "Send USDC";
+
   return (
     <div className="space-y-4">
       <form onSubmit={handleSubmit} className="space-y-4">
         <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
-          Send USDC (Gasless)
+          {titleLabel}
         </h2>
 
         {localError && (
           <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
             {localError}
+          </div>
+        )}
+
+        {!isGasless && (
+          <div className="rounded-lg bg-amber-50 p-3 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+            ⚠️ MetaMask transactions require gas fees
           </div>
         )}
 
@@ -66,7 +78,7 @@ export function SendUSDC() {
           disabled={isLoading}
           className="w-full rounded-lg bg-green-600 px-4 py-3 font-semibold text-white hover:bg-green-700 disabled:opacity-50"
         >
-          {isLoading ? "Sending..." : "💸 Send USDC"}
+          {isLoading ? "Sending..." : buttonLabel}
         </button>
       </form>
 

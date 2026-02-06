@@ -1,285 +1,169 @@
 "use client";
 
 import * as React from "react";
+import { type Hex, type Address } from "viem";
 import {
-  type Hex,
-  createPublicClient,
-  parseUnits,
-  formatUnits,
-  erc20Abi,
-  parseGwei,
-} from "viem";
-import { arcTestnet } from "viem/chains";
-import {
-  type P256Credential,
-  type SmartAccount,
-  type WebAuthnAccount,
-  createBundlerClient,
-  toWebAuthnAccount,
-} from "viem/account-abstraction";
-import {
-  WebAuthnMode,
-  toCircleSmartAccount,
-  toModularTransport,
-  toPasskeyTransport,
-  toWebAuthnCredential,
-  encodeTransfer,
-  ContractAddress,
-} from "@circle-fin/modular-wallets-core";
+  usePasskeyWallet,
+  type UsePasskeyWalletReturn,
+} from "./usePasskeyWallet";
+import { useEOAWallet, type UseEOAWalletReturn } from "./useEOAWallet";
 
-// Constants
-const clientKey = process.env.NEXT_PUBLIC_CIRCLE_CLIENT_KEY!;
-const clientUrl = process.env.NEXT_PUBLIC_CIRCLE_CLIENT_URL!;
-const USDC_DECIMALS = 6;
+// Re-export individual hooks for direct usage
+export { usePasskeyWallet } from "./usePasskeyWallet";
+export { useEOAWallet } from "./useEOAWallet";
 
-// Create Circle transports (singleton - outside component)
-const passkeyTransport = toPasskeyTransport(clientUrl, clientKey);
-const modularTransport = toModularTransport(
-  `${clientUrl}/arcTestnet`,
-  clientKey
-);
+// Wallet type
+export type WalletType = "passkey" | "eoa" | null;
 
-// Create clients (singleton)
-export const publicClient = createPublicClient({
-  chain: arcTestnet,
-  transport: modularTransport,
-});
+// Unified wallet state
+export interface UnifiedWalletState {
+  // Connection state
+  isConnected: boolean;
+  isReady: boolean;
+  walletType: WalletType;
 
-export const bundlerClient = createBundlerClient({
-  chain: arcTestnet,
-  transport: modularTransport,
-});
+  // Address (works for both wallet types)
+  address: Address | undefined;
 
-// Types
-export interface WalletState {
-  account: SmartAccount | undefined;
-  credential: P256Credential | null;
-  username: string | undefined;
+  // Loading & error
   isLoading: boolean;
   error: string | null;
+
+  // Balance
   usdcBalance: string;
   isLoadingBalance: boolean;
+
+  // Passkey-specific
+  username: string | undefined;
 }
 
-export interface SendResult {
-  userOpHash: Hex;
-  txHash: Hex;
-}
+export interface UnifiedWalletActions {
+  // Passkey actions
+  registerPasskey: (username: string) => Promise<void>;
+  loginPasskey: () => Promise<void>;
 
-export interface WalletActions {
-  register: (username: string) => Promise<void>;
-  login: () => Promise<void>;
+  // EOA actions
+  connectMetaMask: () => Promise<void>;
+
+  // Common actions
   logout: () => void;
   fetchBalance: () => Promise<void>;
-  sendUSDC: (to: `0x${string}`, amount: string) => Promise<SendResult>;
+  sendUSDC: (
+    to: Address,
+    amount: string
+  ) => Promise<{ userOpHash?: Hex; txHash: Hex }>;
   clearError: () => void;
 }
 
-export interface UseWalletReturn extends WalletState, WalletActions {
-  isConnected: boolean;
-  isReady: boolean;
+export interface UseWalletReturn
+  extends UnifiedWalletState,
+    UnifiedWalletActions {
+  // Access to underlying wallet hooks if needed
+  passkeyWallet: UsePasskeyWalletReturn;
+  eoaWallet: UseEOAWalletReturn;
 }
 
-// Hook implementation
+// Unified Wallet Hook - combines passkey and EOA wallets
 export function useWalletCore(): UseWalletReturn {
-  const [account, setAccount] = React.useState<SmartAccount>();
-  const [credential, setCredential] = React.useState<P256Credential | null>(
-    null
-  );
-  const [username, setUsername] = React.useState<string | undefined>();
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [error, setError] = React.useState<string | null>(null);
-  const [usdcBalance, setUsdcBalance] = React.useState<string>("0");
-  const [isLoadingBalance, setIsLoadingBalance] = React.useState(false);
+  const passkeyWallet = usePasskeyWallet();
+  const eoaWallet = useEOAWallet();
 
-  // Derived state
-  const isConnected = !!credential;
-  const isReady = !!account;
+  // Determine which wallet is active
+  const walletType: WalletType = React.useMemo(() => {
+    if (passkeyWallet.isConnected) return "passkey";
+    if (eoaWallet.isConnected) return "eoa";
+    return null;
+  }, [passkeyWallet.isConnected, eoaWallet.isConnected]);
 
-  // Load credential from localStorage on mount
-  React.useEffect(() => {
-    const storedCredential = localStorage.getItem("credential");
-    const storedUsername = localStorage.getItem("username");
-    if (storedCredential) {
-      setCredential(JSON.parse(storedCredential));
-    }
-    if (storedUsername) {
-      setUsername(storedUsername);
-    }
-  }, []);
+  // Unified state
+  const isConnected = passkeyWallet.isConnected || eoaWallet.isConnected;
+  const isReady = passkeyWallet.isReady || eoaWallet.isReady;
 
-  // Create smart account when credential is available
-  React.useEffect(() => {
-    if (!credential) return;
+  const address = React.useMemo(() => {
+    if (walletType === "passkey") return passkeyWallet.account?.address;
+    if (walletType === "eoa") return eoaWallet.address;
+    return undefined;
+  }, [walletType, passkeyWallet.account?.address, eoaWallet.address]);
 
-    toCircleSmartAccount({
-      client: publicClient,
-      owner: toWebAuthnAccount({ credential }) as WebAuthnAccount,
-      name: username,
-    }).then(setAccount);
-  }, [credential, username]);
+  const isLoading = passkeyWallet.isLoading || eoaWallet.isLoading;
+  const error = passkeyWallet.error || eoaWallet.error;
 
-  // Fetch balance
-  const fetchBalance = React.useCallback(async () => {
-    if (!account?.address) return;
+  const usdcBalance = React.useMemo(() => {
+    if (walletType === "passkey") return passkeyWallet.usdcBalance;
+    if (walletType === "eoa") return eoaWallet.usdcBalance;
+    return "0";
+  }, [walletType, passkeyWallet.usdcBalance, eoaWallet.usdcBalance]);
 
-    setIsLoadingBalance(true);
-    try {
-      const balance = await publicClient.readContract({
-        address: ContractAddress.ArcTestnet_USDC,
-        abi: erc20Abi,
-        functionName: "balanceOf",
-        args: [account.address],
-      });
-      setUsdcBalance(formatUnits(balance, USDC_DECIMALS));
-    } catch (err) {
-      console.error("Failed to fetch balance:", err);
-    } finally {
-      setIsLoadingBalance(false);
-    }
-  }, [account?.address]);
+  const isLoadingBalance =
+    passkeyWallet.isLoadingBalance || eoaWallet.isLoadingBalance;
 
-  // Auto-fetch balance when account is ready
-  React.useEffect(() => {
-    if (account?.address) {
-      fetchBalance();
-    }
-  }, [account?.address, fetchBalance]);
-
-  // Register new wallet
-  const register = React.useCallback(async (usernameInput: string) => {
-    if (!usernameInput.trim()) {
-      setError("Please enter a username");
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const newCredential = await toWebAuthnCredential({
-        transport: passkeyTransport,
-        mode: WebAuthnMode.Register,
-        username: usernameInput,
-      });
-      localStorage.setItem("credential", JSON.stringify(newCredential));
-      localStorage.setItem("username", usernameInput);
-      setCredential(newCredential);
-      setUsername(usernameInput);
-    } catch (err) {
-      console.error("Registration failed:", err);
-      setError(err instanceof Error ? err.message : "Registration failed");
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Login with existing passkey
-  const login = React.useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const existingCredential = await toWebAuthnCredential({
-        transport: passkeyTransport,
-        mode: WebAuthnMode.Login,
-      });
-      localStorage.setItem("credential", JSON.stringify(existingCredential));
-      setCredential(existingCredential);
-    } catch (err) {
-      console.error("Login failed:", err);
-      setError(err instanceof Error ? err.message : "Login failed");
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Logout
+  // Unified actions
   const logout = React.useCallback(() => {
-    localStorage.removeItem("credential");
-    localStorage.removeItem("username");
-    setCredential(null);
-    setAccount(undefined);
-    setUsername(undefined);
-    setUsdcBalance("0");
-    setError(null);
-  }, []);
+    if (walletType === "passkey") {
+      passkeyWallet.logoutPasskey();
+    } else if (walletType === "eoa") {
+      eoaWallet.disconnectMetaMask();
+    }
+  }, [walletType, passkeyWallet, eoaWallet]);
 
-  // Clear error
-  const clearError = React.useCallback(() => {
-    setError(null);
-  }, []);
+  const fetchBalance = React.useCallback(async () => {
+    if (walletType === "passkey") {
+      await passkeyWallet.fetchBalance();
+    } else if (walletType === "eoa") {
+      await eoaWallet.fetchBalance();
+    }
+  }, [walletType, passkeyWallet, eoaWallet]);
 
-  // Send USDC
   const sendUSDC = React.useCallback(
-    async (to: `0x${string}`, amount: string): Promise<SendResult> => {
-      if (!account) {
-        throw new Error("Wallet not connected");
+    async (
+      to: Address,
+      amount: string
+    ): Promise<{ userOpHash?: Hex; txHash: Hex }> => {
+      if (walletType === "passkey") {
+        const result = await passkeyWallet.sendUSDC(to, amount);
+        return { userOpHash: result.userOpHash, txHash: result.txHash };
+      } else if (walletType === "eoa") {
+        const result = await eoaWallet.sendUSDC(to, amount);
+        return { txHash: result.txHash };
       }
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const callData = encodeTransfer(
-          to,
-          ContractAddress.ArcTestnet_USDC,
-          parseUnits(amount, USDC_DECIMALS)
-        );
-
-        const userOpHash = await bundlerClient.sendUserOperation({
-          account,
-          calls: [callData],
-          paymaster: true,
-          // ARC testnet requires minimum 1 gwei priority fee
-          maxPriorityFeePerGas: parseGwei("1"),
-          maxFeePerGas: parseGwei("50"),
-        });
-
-        const { receipt } = await bundlerClient.waitForUserOperationReceipt({
-          hash: userOpHash,
-        });
-
-        // Refresh balance after successful transaction
-        await fetchBalance();
-
-        return {
-          userOpHash,
-          txHash: receipt.transactionHash,
-        };
-      } catch (err) {
-        console.error("Transaction failed:", err);
-        const errorMessage =
-          err instanceof Error ? err.message : "Transaction failed";
-        setError(errorMessage);
-        throw err;
-      } finally {
-        setIsLoading(false);
-      }
+      throw new Error("No wallet connected");
     },
-    [account, fetchBalance]
+    [walletType, passkeyWallet, eoaWallet]
   );
+
+  const clearError = React.useCallback(() => {
+    passkeyWallet.clearError();
+    eoaWallet.clearError();
+  }, [passkeyWallet, eoaWallet]);
 
   return {
-    // State
-    account,
-    credential,
-    username,
+    // Unified state
+    isConnected,
+    isReady,
+    walletType,
+    address,
     isLoading,
     error,
     usdcBalance,
     isLoadingBalance,
-    // Derived
-    isConnected,
-    isReady,
-    // Actions
-    register,
-    login,
+    username: passkeyWallet.username,
+
+    // Passkey actions
+    registerPasskey: passkeyWallet.registerPasskey,
+    loginPasskey: passkeyWallet.loginPasskey,
+
+    // EOA actions
+    connectMetaMask: eoaWallet.connectMetaMask,
+
+    // Common actions
     logout,
     fetchBalance,
     sendUSDC,
     clearError,
+
+    // Access to underlying hooks
+    passkeyWallet,
+    eoaWallet,
   };
 }
+
