@@ -52,15 +52,6 @@ export function WalletConnect({ onSuccess }: WalletConnectProps) {
   // Sign-in options
   return (
     <div className="w-full max-w-md space-y-6 rounded-2xl bg-white p-8 shadow-xl dark:bg-zinc-900">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">
-          🎯 TweetBet
-        </h1>
-        <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-          Choose how to sign in
-        </p>
-      </div>
-
       {error && (
         <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
           {error}
