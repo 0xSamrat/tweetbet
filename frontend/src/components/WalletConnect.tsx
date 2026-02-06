@@ -4,12 +4,13 @@ import * as React from "react";
 import Image from "next/image";
 import { useWallet } from "@/contexts/WalletContext";
 
-type SignInStep = "initial" | "options";
+interface WalletConnectProps {
+  onSuccess?: () => void;
+}
 
-export function WalletConnect() {
+export function WalletConnect({ onSuccess }: WalletConnectProps) {
   const { registerPasskey, loginPasskey, connectMetaMask, isLoading, error } =
     useWallet();
-  const [step, setStep] = React.useState<SignInStep>("initial");
   const [showUsernameInput, setShowUsernameInput] = React.useState(false);
   const [username, setUsername] = React.useState("");
 
@@ -19,6 +20,7 @@ export function WalletConnect() {
     }
     try {
       await registerPasskey(username);
+      onSuccess?.();
     } catch {
       // Error is already set in the hook
     }
@@ -27,6 +29,7 @@ export function WalletConnect() {
   const handlePasskeyLogin = async () => {
     try {
       await loginPasskey();
+      onSuccess?.();
     } catch {
       // Error is already set in the hook
     }
@@ -35,39 +38,16 @@ export function WalletConnect() {
   const handleMetaMaskConnect = async () => {
     try {
       await connectMetaMask();
+      onSuccess?.();
     } catch {
       // Error is already set in the hook
     }
   };
 
-  const handleBack = () => {
-    setStep("initial");
+  const handleCancelUsername = () => {
     setShowUsernameInput(false);
     setUsername("");
   };
-
-  // Initial "Sign In" button
-  if (step === "initial") {
-    return (
-      <div className="w-full max-w-md space-y-6 rounded-2xl bg-white p-8 shadow-xl dark:bg-zinc-900">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-zinc-900 dark:text-white">
-            🎯 TweetBet
-          </h1>
-          <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-            Gasless prediction markets powered by passkeys
-          </p>
-        </div>
-
-        <button
-          onClick={() => setStep("options")}
-          className="w-full rounded-lg bg-blue-600 px-4 py-4 font-semibold text-white hover:bg-blue-700 transition-colors"
-        >
-          🔐 Sign In
-        </button>
-      </div>
-    );
-  }
 
   // Sign-in options
   return (
@@ -109,7 +89,7 @@ export function WalletConnect() {
             />
             <div className="flex gap-3">
               <button
-                onClick={() => setShowUsernameInput(false)}
+                onClick={handleCancelUsername}
                 disabled={isLoading}
                 className="flex-1 rounded-lg border border-zinc-300 px-4 py-3 font-semibold text-zinc-700 hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
               >
@@ -174,14 +154,6 @@ export function WalletConnect() {
           Requires gas • Use your existing wallet
         </p>
       </div>
-
-      {/* Back button */}
-      <button
-        onClick={handleBack}
-        className="w-full text-center text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
-      >
-        ← Back
-      </button>
     </div>
   );
 }
