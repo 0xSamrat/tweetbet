@@ -87,47 +87,58 @@ export default function MarketPage() {
     }
   }, [xPostId]);
 
-  // Fetch pool state from contract
+  // Fetch pool state from contract - use marketId to get pool state from MarketFactory
   useEffect(() => {
     async function fetchPoolState() {
-      if (!market?.ammAddress) return;
+      if (!market?.marketId) return;
       
       try {
         const client = createPublicClient({
           chain: arcTestnet,
           transport: http(),
         });
+
+        const MARKET_FACTORY_ADDRESS = process.env.NEXT_PUBLIC_MARKET_FACTORY_ADDRESS as `0x${string}`;
         
-        const predictionAmmAbi = [
+        // Use getPoolState from MarketFactory (takes marketId and feeOrHook)
+        const marketFactoryAbi = [
           {
             name: "getPoolState",
             type: "function",
             stateMutability: "view",
-            inputs: [],
+            inputs: [
+              { name: "marketId", type: "uint256" },
+              { name: "feeOrHook", type: "uint256" },
+            ],
             outputs: [
-              { name: "yesBalance", type: "uint256" },
-              { name: "noBalance", type: "uint256" },
-              { name: "k", type: "uint256" },
-              { name: "totalLiquidity", type: "uint256" },
+              { name: "rYes", type: "uint256" },
+              { name: "rNo", type: "uint256" },
               { name: "pYesNum", type: "uint256" },
               { name: "pYesDen", type: "uint256" },
             ],
           },
         ] as const;
         
+        const feeBps = BigInt(30); // 0.3% fee - same as used when creating markets
+        
+        console.log("Fetching pool state for marketId:", market.marketId);
+        
         const result = await client.readContract({
-          address: market.ammAddress as `0x${string}`,
-          abi: predictionAmmAbi,
+          address: MARKET_FACTORY_ADDRESS,
+          abi: marketFactoryAbi,
           functionName: "getPoolState",
+          args: [BigInt(market.marketId), feeBps],
         });
+        
+        console.log("Pool state result:", result);
         
         setPoolState({
           yesBalance: result[0],
           noBalance: result[1],
-          k: result[2],
-          totalLiquidity: result[3],
-          pYesNum: result[4],
-          pYesDen: result[5],
+          k: BigInt(0), // Not returned by getPoolState
+          totalLiquidity: result[0] + result[1], // Approximate
+          pYesNum: result[2],
+          pYesDen: result[3],
         });
       } catch (err) {
         console.error("Failed to fetch pool state:", err);
@@ -135,7 +146,7 @@ export default function MarketPage() {
     }
     
     fetchPoolState();
-  }, [market?.ammAddress]);
+  }, [market?.marketId]);
 
   const yesProbability = poolState 
     ? Number(poolState.pYesNum) / Number(poolState.pYesDen) * 100
@@ -150,12 +161,19 @@ export default function MarketPage() {
       setTradeError("Please connect your wallet");
       return;
     }
+
+    // Check if pool state was fetched (meaning market exists on-chain)
+    if (!poolState) {
+      setTradeError("Market not found on-chain. The market may not exist or you may be on the wrong network.");
+      return;
+    }
     
     setTradeError(null);
     setTradeSuccess(null);
     
     try {
       const marketId = BigInt(market.marketId);
+      console.log("Trading on market:", marketId.toString(), "Amount:", tradeAmount, "Type:", tradeType);
       
       if (tradeType === "yes") {
         await buyYes({ marketId, amount: tradeAmount });
@@ -171,7 +189,13 @@ export default function MarketPage() {
       }, 2000);
     } catch (err) {
       console.error("Trade failed:", err);
-      setTradeError(err instanceof Error ? err.message : "Trade failed");
+      const errorMessage = err instanceof Error ? err.message : "Trade failed";
+      // Provide more helpful error message
+      if (errorMessage.includes("reverted")) {
+        setTradeError("Transaction failed. This could mean: 1) Market doesn't exist on-chain, 2) Wrong network, or 3) Insufficient funds.");
+      } else {
+        setTradeError(errorMessage);
+      }
     }
   };
 
@@ -497,8 +521,10 @@ export default function MarketPage() {
             {/* Market ID */}
             <div>
               <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-1">Market ID</div>
-              <div className="text-zinc-900 dark:text-white font-medium">
-                #{market.marketId}
+              <div className="text-zinc-900 dark:text-white font-mono text-sm" title={`#${market.marketId}`}>
+                #{market.marketId.length > 12 
+                  ? `${market.marketId.slice(0, 4)}...${market.marketId.slice(-4)}`
+                  : market.marketId}
               </div>
             </div>
             
@@ -506,7 +532,7 @@ export default function MarketPage() {
             <div>
               <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-1">Chain</div>
               <div className="text-zinc-900 dark:text-white font-medium">
-                Citrea Testnet
+                Arc Testnet
               </div>
             </div>
           </div>

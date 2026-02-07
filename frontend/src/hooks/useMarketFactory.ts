@@ -9,6 +9,9 @@ import {
   parseEther,
   encodeFunctionData,
   parseGwei,
+  decodeEventLog,
+  keccak256,
+  toHex,
   type Address,
   type Hex,
   type TransactionReceipt,
@@ -52,6 +55,8 @@ export interface CreateMarketResult {
   noId: bigint;
   /** LP tokens minted */
   liquidity: bigint;
+  /** Transaction hash for convenience */
+  transactionHash: Hex;
 }
 
 export interface BuyParams {
@@ -303,16 +308,50 @@ export function useMarketFactory(): UseMarketFactoryReturn {
           throw new Error("Transaction reverted");
         }
 
-        // Parse logs to extract marketId, noId, and liquidity
-        // The Created event is the first log
-        const createdLog = receipt.logs[0];
+        // Parse logs to extract marketId, noId from the Created event
+        // Created event signature: Created(uint256 indexed marketId, uint256 indexed noId, string description, address resolver, address collateral, uint64 close, bool canClose, bytes32 xPost)
+        const createdEventSignature = keccak256(toHex("Created(uint256,uint256,string,address,address,uint64,bool,bytes32)"));
+        
+        console.log("Looking for Created event with signature:", createdEventSignature);
+        console.log("Transaction logs:", receipt.logs.length, "logs found");
+        
+        // Find the Created event log
+        const createdLog = receipt.logs.find(
+          (log) => log.topics[0] === createdEventSignature
+        );
+        
         if (!createdLog) {
+          // Log all event signatures for debugging
+          console.log("Available event signatures:", receipt.logs.map(l => l.topics[0]));
           throw new Error("Could not find Created event in transaction logs");
         }
 
-        // Market ID is topic[1], NO ID is topic[2] (indexed params)
-        const marketId = BigInt(createdLog.topics[1] || "0");
-        const noId = BigInt(createdLog.topics[2] || "0");
+        // Decode the Created event
+        let marketId: bigint;
+        let noId: bigint;
+        
+        try {
+          const decoded = decodeEventLog({
+            abi: marketFactoryAbi,
+            data: createdLog.data,
+            topics: createdLog.topics,
+          });
+          
+          console.log("Decoded Created event:", decoded);
+          
+          // Extract marketId and noId from decoded args
+          const args = decoded.args as unknown as { marketId: bigint; noId: bigint };
+          marketId = args.marketId;
+          noId = args.noId;
+        } catch (decodeError) {
+          console.error("Failed to decode event, falling back to raw topic parsing:", decodeError);
+          // Fallback: parse directly from topics
+          marketId = BigInt(createdLog.topics[1] || "0");
+          noId = BigInt(createdLog.topics[2] || "0");
+        }
+        
+        console.log("Parsed marketId:", marketId.toString());
+        console.log("Parsed noId:", noId.toString());
 
         // Liquidity is from the LiquidityAdded event (we'll get a rough estimate from Split event)
         // For now, estimate as initial ETH value (proper parsing would decode all events)
@@ -324,6 +363,7 @@ export function useMarketFactory(): UseMarketFactoryReturn {
           marketId,
           noId,
           liquidity,
+          transactionHash: txHash,
         };
       } catch (err) {
         const message =

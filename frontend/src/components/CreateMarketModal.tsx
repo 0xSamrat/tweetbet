@@ -16,7 +16,7 @@ interface CreateMarketModalProps {
 
 export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketModalProps) {
   const { createMarketAndSeed, isLoading, error: hookError } = useMarketFactory();
-  const { wallet } = useWallet();
+  const wallet = useWallet();
   
   // Step state: "input" for X URL input, "review" for reviewing/editing
   const [step, setStep] = useState<"input" | "review">("input");
@@ -169,10 +169,11 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
       // Save market data to MongoDB
       try {
         const parsed = xPostUrl.trim() && isValidXUrl(xPostUrl) ? parseXPostUrl(xPostUrl.trim()) : null;
+        console.log("Saving to MongoDB with marketId:", result.marketId.toString());
         await saveMarketToDatabase({
           marketId: result.marketId.toString(),
-          ammAddress: result.ammAddress,
-          creatorAddress: wallet?.address || "",
+          ammAddress: "", // PredictionAMM is a single contract, fetched from MarketFactory.PredictionAMM()
+          creatorAddress: wallet.address || "",
           description: description.trim(),
           closeTime: Number(closeTimestamp),
           xPostUrl: xPostUrl.trim() || undefined,
@@ -183,10 +184,10 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
           tweetAuthor: tweetAuthor || undefined,
           initialLiquidity: liquidityAmount,
           createdAt: new Date(),
-          chainId: 5115, // Citrea testnet
+          chainId: 5115, // Arc testnet
           transactionHash: result.transactionHash,
         });
-        console.log("Market saved to MongoDB successfully");
+
       } catch (dbError) {
         console.error("Failed to save to MongoDB:", dbError);
         // Don't fail the whole operation if MongoDB save fails
