@@ -7,12 +7,16 @@ import {
   custom,
   http,
   parseEther,
+  encodeFunctionData,
+  parseGwei,
   type Address,
   type Hex,
   type TransactionReceipt,
 } from "viem";
 import { arcTestnet, baseSepolia } from "viem/chains";
 import { MARKET_FACTORY_ADDRESS, marketFactoryAbi } from "@/contracts";
+import { useWallet } from "@/contexts/WalletContext";
+import { bundlerClient } from "./usePasskeyWallet";
 
 // ============================================
 // TYPES
@@ -119,6 +123,9 @@ export function useMarketFactory(): UseMarketFactoryReturn {
   const [error, setError] = React.useState<string | null>(null);
   const [lastTxHash, setLastTxHash] = React.useState<Hex | null>(null);
 
+  // Get unified wallet context
+  const wallet = useWallet();
+
   const clearError = React.useCallback(() => {
     setError(null);
   }, []);
@@ -135,40 +142,17 @@ export function useMarketFactory(): UseMarketFactoryReturn {
         );
       }
 
-      // Check for MetaMask
-      if (typeof window === "undefined" || !window.ethereum) {
-        throw new Error("MetaMask not found. Please install MetaMask.");
+      // Check wallet connection
+      if (!wallet.isConnected || !wallet.address) {
+        throw new Error("No wallet connected. Please connect a wallet first.");
       }
 
       setIsLoading(true);
       setError(null);
 
       try {
-        // Create wallet client
-        const walletClient = createWalletClient({
-          transport: custom(window.ethereum),
-        });
-
-        // Get accounts and chain
-        const [account] = await walletClient.getAddresses();
-        if (!account) {
-          throw new Error("No account connected. Please connect MetaMask.");
-        }
-
-        // Get current chain
-        const chainIdHex = await window.ethereum.request({
-          method: "eth_chainId",
-        });
-        const chainId = parseInt(chainIdHex as string, 16) as SupportedChainId;
-
-        // Get chain config
-        const chain = SUPPORTED_CHAINS[chainId];
-        if (!chain) {
-          throw new Error(
-            `Unsupported chain (${chainId}). Please switch to ARC Testnet, Base Sepolia, or Anvil.`
-          );
-        }
-
+        const account = wallet.address;
+        
         // Parse parameters
         const {
           description,
@@ -197,44 +181,122 @@ export function useMarketFactory(): UseMarketFactoryReturn {
           liquidityAmount,
           feeBps: feeBps.toString(),
           deadline: deadline.toString(),
+          walletType: wallet.walletType,
         });
 
-        // Send transaction
-        const txHash = await walletClient.writeContract({
-          address: MARKET_FACTORY_ADDRESS,
-          abi: marketFactoryAbi,
-          functionName: "createMarketAndSeed",
-          args: [
-            description,
-            resolver,
-            collateral,
-            closeTime,
-            canClose,
-            xPost,
-            BigInt(0), // collateralIn (0 = use msg.value for ETH)
-            feeBps,
-            BigInt(0), // minLiquidity
-            account, // LP tokens recipient
-            deadline,
-          ],
-          value: ethValue,
-          account,
-          chain,
-        });
+        let txHash: Hex;
+        let receipt: TransactionReceipt;
 
-        console.log("Transaction sent:", txHash);
+        if (wallet.walletType === "passkey") {
+          // Use passkey wallet (account abstraction)
+          const passkeyAccount = wallet.passkeyWallet.account;
+          if (!passkeyAccount) {
+            throw new Error("Passkey account not ready");
+          }
+
+          // Encode the function call
+          const callData = encodeFunctionData({
+            abi: marketFactoryAbi,
+            functionName: "createMarketAndSeed",
+            args: [
+              description,
+              resolver,
+              collateral,
+              closeTime,
+              canClose,
+              xPost,
+              BigInt(0), // collateralIn (0 = use msg.value for ETH)
+              feeBps,
+              BigInt(0), // minLiquidity
+              account, // LP tokens recipient
+              deadline,
+            ],
+          });
+
+          // Send via bundler
+          const userOpHash = await bundlerClient.sendUserOperation({
+            account: passkeyAccount,
+            calls: [
+              {
+                to: MARKET_FACTORY_ADDRESS,
+                data: callData,
+                value: ethValue,
+              },
+            ],
+            paymaster: true,
+            maxPriorityFeePerGas: parseGwei("1"),
+            maxFeePerGas: parseGwei("50"),
+          });
+
+          console.log("UserOp sent:", userOpHash);
+
+          const { receipt: userOpReceipt } = await bundlerClient.waitForUserOperationReceipt({
+            hash: userOpHash,
+          });
+
+          txHash = userOpReceipt.transactionHash;
+          receipt = userOpReceipt;
+        } else {
+          // Use EOA wallet (MetaMask)
+          if (typeof window === "undefined" || !window.ethereum) {
+            throw new Error("MetaMask not found. Please install MetaMask.");
+          }
+
+          const walletClient = createWalletClient({
+            transport: custom(window.ethereum),
+          });
+
+          // Get current chain
+          const chainIdHex = await window.ethereum.request({
+            method: "eth_chainId",
+          });
+          const chainId = parseInt(chainIdHex as string, 16) as SupportedChainId;
+
+          // Get chain config
+          const chain = SUPPORTED_CHAINS[chainId];
+          if (!chain) {
+            throw new Error(
+              `Unsupported chain (${chainId}). Please switch to ARC Testnet, Base Sepolia, or Anvil.`
+            );
+          }
+
+          // Send transaction
+          txHash = await walletClient.writeContract({
+            address: MARKET_FACTORY_ADDRESS,
+            abi: marketFactoryAbi,
+            functionName: "createMarketAndSeed",
+            args: [
+              description,
+              resolver,
+              collateral,
+              closeTime,
+              canClose,
+              xPost,
+              BigInt(0), // collateralIn (0 = use msg.value for ETH)
+              feeBps,
+              BigInt(0), // minLiquidity
+              account, // LP tokens recipient
+              deadline,
+            ],
+            value: ethValue,
+            account,
+            chain,
+          });
+
+          console.log("Transaction sent:", txHash);
+
+          // Wait for confirmation
+          const publicClient = createPublicClient({
+            chain,
+            transport: http(),
+          });
+
+          receipt = await publicClient.waitForTransactionReceipt({
+            hash: txHash,
+          });
+        }
+
         setLastTxHash(txHash);
-
-        // Wait for confirmation
-        const publicClient = createPublicClient({
-          chain,
-          transport: http(),
-        });
-
-        const receipt = await publicClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
-
         console.log("Transaction confirmed:", receipt);
 
         if (receipt.status === "reverted") {
@@ -273,7 +335,7 @@ export function useMarketFactory(): UseMarketFactoryReturn {
         setIsLoading(false);
       }
     },
-    []
+    [wallet]
   );
 
   /**
@@ -285,33 +347,15 @@ export function useMarketFactory(): UseMarketFactoryReturn {
         throw new Error("MARKET_FACTORY_ADDRESS not configured");
       }
 
-      if (typeof window === "undefined" || !window.ethereum) {
-        throw new Error("MetaMask not found. Please install MetaMask.");
+      if (!wallet.isConnected || !wallet.address) {
+        throw new Error("No wallet connected. Please connect a wallet first.");
       }
 
       setIsLoading(true);
       setError(null);
 
       try {
-        const walletClient = createWalletClient({
-          transport: custom(window.ethereum),
-        });
-
-        const [account] = await walletClient.getAddresses();
-        if (!account) {
-          throw new Error("No account connected. Please connect MetaMask.");
-        }
-
-        const chainIdHex = await window.ethereum.request({
-          method: "eth_chainId",
-        });
-        const chainId = parseInt(chainIdHex as string, 16) as SupportedChainId;
-
-        const chain = SUPPORTED_CHAINS[chainId];
-        if (!chain) {
-          throw new Error(`Unsupported chain (${chainId}).`);
-        }
-
+        const account = wallet.address;
         const {
           marketId,
           amount,
@@ -326,44 +370,114 @@ export function useMarketFactory(): UseMarketFactoryReturn {
           marketId: marketId.toString(),
           amount,
           feeBps: feeBps.toString(),
+          walletType: wallet.walletType,
         });
 
-        const txHash = await walletClient.writeContract({
-          address: MARKET_FACTORY_ADDRESS,
-          abi: marketFactoryAbi,
-          functionName: "buyYes",
-          args: [
-            marketId,
-            BigInt(0), // collateralIn (0 = use msg.value for ETH)
-            minOut, // minYesOut
-            BigInt(0), // minSwapOut
-            feeBps, // feeOrHook
-            account, // to
-            deadline,
-          ],
-          value: ethValue,
-          account,
-          chain,
-        });
+        let txHash: Hex;
+        let receipt: TransactionReceipt;
 
-        console.log("buyYes tx sent:", txHash);
+        if (wallet.walletType === "passkey") {
+          // Use passkey wallet (account abstraction)
+          const passkeyAccount = wallet.passkeyWallet.account;
+          if (!passkeyAccount) {
+            throw new Error("Passkey account not ready");
+          }
+
+          // Encode the function call
+          const callData = encodeFunctionData({
+            abi: marketFactoryAbi,
+            functionName: "buyYes",
+            args: [
+              marketId,
+              BigInt(0), // collateralIn (0 = use msg.value for ETH)
+              minOut, // minYesOut
+              BigInt(0), // minSwapOut
+              feeBps, // feeOrHook
+              account, // to
+              deadline,
+            ],
+          });
+
+          // Send via bundler
+          const userOpHash = await bundlerClient.sendUserOperation({
+            account: passkeyAccount,
+            calls: [
+              {
+                to: MARKET_FACTORY_ADDRESS,
+                data: callData,
+                value: ethValue,
+              },
+            ],
+            paymaster: true,
+            maxPriorityFeePerGas: parseGwei("1"),
+            maxFeePerGas: parseGwei("50"),
+          });
+
+          console.log("buyYes UserOp sent:", userOpHash);
+
+          const { receipt: userOpReceipt } = await bundlerClient.waitForUserOperationReceipt({
+            hash: userOpHash,
+          });
+
+          txHash = userOpReceipt.transactionHash;
+          receipt = userOpReceipt;
+        } else {
+          // Use EOA wallet (MetaMask)
+          if (typeof window === "undefined" || !window.ethereum) {
+            throw new Error("MetaMask not found. Please install MetaMask.");
+          }
+
+          const walletClient = createWalletClient({
+            transport: custom(window.ethereum),
+          });
+
+          const chainIdHex = await window.ethereum.request({
+            method: "eth_chainId",
+          });
+          const chainId = parseInt(chainIdHex as string, 16) as SupportedChainId;
+
+          const chain = SUPPORTED_CHAINS[chainId];
+          if (!chain) {
+            throw new Error(`Unsupported chain (${chainId}).`);
+          }
+
+          txHash = await walletClient.writeContract({
+            address: MARKET_FACTORY_ADDRESS,
+            abi: marketFactoryAbi,
+            functionName: "buyYes",
+            args: [
+              marketId,
+              BigInt(0), // collateralIn (0 = use msg.value for ETH)
+              minOut, // minYesOut
+              BigInt(0), // minSwapOut
+              feeBps, // feeOrHook
+              account, // to
+              deadline,
+            ],
+            value: ethValue,
+            account,
+            chain,
+          });
+
+          console.log("buyYes tx sent:", txHash);
+
+          const publicClient = createPublicClient({
+            chain,
+            transport: http(),
+          });
+
+          receipt = await publicClient.waitForTransactionReceipt({
+            hash: txHash,
+          });
+        }
+
         setLastTxHash(txHash);
-
-        const publicClient = createPublicClient({
-          chain,
-          transport: http(),
-        });
-
-        const receipt = await publicClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
 
         if (receipt.status === "reverted") {
           throw new Error("Transaction reverted");
         }
 
         // Parse Transfer event to get shares received
-        // The last Transfer event should be the YES shares transfer to user
         const transferLogs = receipt.logs.filter(
           (log) => log.topics[0] === "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
         );
@@ -381,7 +495,7 @@ export function useMarketFactory(): UseMarketFactoryReturn {
         setIsLoading(false);
       }
     },
-    []
+    [wallet]
   );
 
   /**
@@ -393,33 +507,15 @@ export function useMarketFactory(): UseMarketFactoryReturn {
         throw new Error("MARKET_FACTORY_ADDRESS not configured");
       }
 
-      if (typeof window === "undefined" || !window.ethereum) {
-        throw new Error("MetaMask not found. Please install MetaMask.");
+      if (!wallet.isConnected || !wallet.address) {
+        throw new Error("No wallet connected. Please connect a wallet first.");
       }
 
       setIsLoading(true);
       setError(null);
 
       try {
-        const walletClient = createWalletClient({
-          transport: custom(window.ethereum),
-        });
-
-        const [account] = await walletClient.getAddresses();
-        if (!account) {
-          throw new Error("No account connected. Please connect MetaMask.");
-        }
-
-        const chainIdHex = await window.ethereum.request({
-          method: "eth_chainId",
-        });
-        const chainId = parseInt(chainIdHex as string, 16) as SupportedChainId;
-
-        const chain = SUPPORTED_CHAINS[chainId];
-        if (!chain) {
-          throw new Error(`Unsupported chain (${chainId}).`);
-        }
-
+        const account = wallet.address;
         const {
           marketId,
           amount,
@@ -434,37 +530,108 @@ export function useMarketFactory(): UseMarketFactoryReturn {
           marketId: marketId.toString(),
           amount,
           feeBps: feeBps.toString(),
+          walletType: wallet.walletType,
         });
 
-        const txHash = await walletClient.writeContract({
-          address: MARKET_FACTORY_ADDRESS,
-          abi: marketFactoryAbi,
-          functionName: "buyNo",
-          args: [
-            marketId,
-            BigInt(0), // collateralIn (0 = use msg.value for ETH)
-            minOut, // minNoOut
-            BigInt(0), // minSwapOut
-            feeBps, // feeOrHook
-            account, // to
-            deadline,
-          ],
-          value: ethValue,
-          account,
-          chain,
-        });
+        let txHash: Hex;
+        let receipt: TransactionReceipt;
 
-        console.log("buyNo tx sent:", txHash);
+        if (wallet.walletType === "passkey") {
+          // Use passkey wallet (account abstraction)
+          const passkeyAccount = wallet.passkeyWallet.account;
+          if (!passkeyAccount) {
+            throw new Error("Passkey account not ready");
+          }
+
+          // Encode the function call
+          const callData = encodeFunctionData({
+            abi: marketFactoryAbi,
+            functionName: "buyNo",
+            args: [
+              marketId,
+              BigInt(0), // collateralIn (0 = use msg.value for ETH)
+              minOut, // minNoOut
+              BigInt(0), // minSwapOut
+              feeBps, // feeOrHook
+              account, // to
+              deadline,
+            ],
+          });
+
+          // Send via bundler
+          const userOpHash = await bundlerClient.sendUserOperation({
+            account: passkeyAccount,
+            calls: [
+              {
+                to: MARKET_FACTORY_ADDRESS,
+                data: callData,
+                value: ethValue,
+              },
+            ],
+            paymaster: true,
+            maxPriorityFeePerGas: parseGwei("1"),
+            maxFeePerGas: parseGwei("50"),
+          });
+
+          console.log("buyNo UserOp sent:", userOpHash);
+
+          const { receipt: userOpReceipt } = await bundlerClient.waitForUserOperationReceipt({
+            hash: userOpHash,
+          });
+
+          txHash = userOpReceipt.transactionHash;
+          receipt = userOpReceipt;
+        } else {
+          // Use EOA wallet (MetaMask)
+          if (typeof window === "undefined" || !window.ethereum) {
+            throw new Error("MetaMask not found. Please install MetaMask.");
+          }
+
+          const walletClient = createWalletClient({
+            transport: custom(window.ethereum),
+          });
+
+          const chainIdHex = await window.ethereum.request({
+            method: "eth_chainId",
+          });
+          const chainId = parseInt(chainIdHex as string, 16) as SupportedChainId;
+
+          const chain = SUPPORTED_CHAINS[chainId];
+          if (!chain) {
+            throw new Error(`Unsupported chain (${chainId}).`);
+          }
+
+          txHash = await walletClient.writeContract({
+            address: MARKET_FACTORY_ADDRESS,
+            abi: marketFactoryAbi,
+            functionName: "buyNo",
+            args: [
+              marketId,
+              BigInt(0), // collateralIn (0 = use msg.value for ETH)
+              minOut, // minNoOut
+              BigInt(0), // minSwapOut
+              feeBps, // feeOrHook
+              account, // to
+              deadline,
+            ],
+            value: ethValue,
+            account,
+            chain,
+          });
+
+          console.log("buyNo tx sent:", txHash);
+
+          const publicClient = createPublicClient({
+            chain,
+            transport: http(),
+          });
+
+          receipt = await publicClient.waitForTransactionReceipt({
+            hash: txHash,
+          });
+        }
+
         setLastTxHash(txHash);
-
-        const publicClient = createPublicClient({
-          chain,
-          transport: http(),
-        });
-
-        const receipt = await publicClient.waitForTransactionReceipt({
-          hash: txHash,
-        });
 
         if (receipt.status === "reverted") {
           throw new Error("Transaction reverted");
@@ -488,7 +655,7 @@ export function useMarketFactory(): UseMarketFactoryReturn {
         setIsLoading(false);
       }
     },
-    []
+    [wallet]
   );
 
   return {

@@ -149,15 +149,17 @@ export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps)
         <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
           <button
             onClick={handleYesClick}
-            className="py-2.5 rounded-xl bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400 font-semibold text-sm transition-colors"
+            className="py-2.5 px-3 rounded-xl bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400 font-semibold text-sm transition-colors flex flex-col items-center gap-0.5"
           >
-            Yes {market.yesProbability}%
+            <span>Buy Yes</span>
+            <span className="text-xs opacity-75">{(market.yesProbability / 100).toFixed(2)} USDC</span>
           </button>
           <button
             onClick={handleNoClick}
-            className="py-2.5 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 font-semibold text-sm transition-colors"
+            className="py-2.5 px-3 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 font-semibold text-sm transition-colors flex flex-col items-center gap-0.5"
           >
-            No {100 - market.yesProbability}%
+            <span>Buy No</span>
+            <span className="text-xs opacity-75">{((100 - market.yesProbability) / 100).toFixed(2)} USDC</span>
           </button>
         </div>
       )}
