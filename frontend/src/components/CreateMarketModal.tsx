@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMarketFactory } from "@/hooks/useMarketFactory";
 import { encodeXPost, parseXPostUrl } from "@/utils/xPostCodec";
+import { generatePredictionFromTweet } from "@/services/geminiService";
 import type { Hex } from "viem";
 
 interface CreateMarketModalProps {
@@ -14,30 +15,95 @@ interface CreateMarketModalProps {
 export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketModalProps) {
   const { createMarketAndSeed, isLoading, error: hookError } = useMarketFactory();
   
+  // Step state: "input" for X URL input, "review" for reviewing/editing
+  const [step, setStep] = useState<"input" | "review">("input");
+  
   // Form state
-  const [description, setDescription] = useState("");
-  const [closeDate, setCloseDate] = useState("");
-  const [closeTime, setCloseTime] = useState("");
-  const [liquidityAmount, setLiquidityAmount] = useState("0.01");
   const [xPostUrl, setXPostUrl] = useState("");
+  const [description, setDescription] = useState("");
+  const [aiContext, setAiContext] = useState("");
+  const [closeDate, setCloseDate] = useState("");
+  const [closeTime, setCloseTime] = useState("23:59");
+  const [liquidityAmount, setLiquidityAmount] = useState("0.01");
+  
+  // Loading states
+  const [isGenerating, setIsGenerating] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const resetForm = () => {
-    setDescription("");
-    setCloseDate("");
-    setCloseTime("");
-    setLiquidityAmount("0.01");
-    setXPostUrl("");
-    setFormError(null);
-    setSuccessMessage(null);
-  };
+  // Reset form when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setStep("input");
+      setXPostUrl("");
+      setDescription("");
+      setAiContext("");
+      setCloseDate("");
+      setCloseTime("23:59");
+      setLiquidityAmount("0.01");
+      setFormError(null);
+      setSuccessMessage(null);
+    }
+  }, [isOpen]);
 
   const handleClose = () => {
-    resetForm();
     onClose();
   };
 
+  // Validate X post URL
+  const isValidXUrl = (url: string) => {
+    return /^https?:\/\/(twitter\.com|x\.com)\/\w+\/status\/\d+/.test(url);
+  };
+
+  // Apply close time suggestion from AI
+  const applyCloseTimeSuggestion = (suggestion: string) => {
+    const now = new Date();
+    let days = 7;
+    
+    switch (suggestion) {
+      case "1 day": days = 1; break;
+      case "3 days": days = 3; break;
+      case "7 days": days = 7; break;
+      case "14 days": days = 14; break;
+      case "30 days": days = 30; break;
+      case "90 days": days = 90; break;
+    }
+    
+    now.setDate(now.getDate() + days);
+    setCloseDate(now.toISOString().split("T")[0]);
+  };
+
+  // Generate prediction from X post using AI
+  const handleGeneratePrediction = async () => {
+    if (!isValidXUrl(xPostUrl)) {
+      setFormError("Please enter a valid X/Twitter post URL");
+      return;
+    }
+
+    setIsGenerating(true);
+    setFormError(null);
+
+    try {
+      const result = await generatePredictionFromTweet(xPostUrl);
+      setDescription(result.question);
+      setAiContext(result.context);
+      applyCloseTimeSuggestion(result.suggestedCloseTime);
+      setStep("review");
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Failed to generate prediction");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Quick duration buttons
+  const setDuration = (days: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() + days);
+    setCloseDate(date.toISOString().split("T")[0]);
+  };
+
+  // Submit market creation
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
@@ -70,13 +136,11 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
 
     // Encode X post if provided
     let xPost: Hex = "0x0000000000000000000000000000000000000000000000000000000000000000";
-    if (xPostUrl.trim()) {
+    if (xPostUrl.trim() && isValidXUrl(xPostUrl)) {
       const parsed = parseXPostUrl(xPostUrl.trim());
-      if (!parsed) {
-        setFormError("Invalid X/Twitter post URL. Format: https://x.com/username/status/123456");
-        return;
+      if (parsed) {
+        xPost = encodeXPost(parsed.postId, parsed.user) as Hex;
       }
-      xPost = encodeXPost(parsed.postId, parsed.user) as Hex;
     }
 
     try {
@@ -87,14 +151,12 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
         xPost,
       });
 
-      setSuccessMessage(`Market created! ID: ${result.marketId.toString()}`);
+      setSuccessMessage(`Market created successfully!`);
       
-      // Call success callback
       if (onSuccess) {
         onSuccess(result.marketId);
       }
 
-      // Reset form after short delay
       setTimeout(() => {
         handleClose();
       }, 2000);
@@ -106,155 +168,286 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
 
   if (!isOpen) return null;
 
-  // Get minimum date (today)
   const today = new Date().toISOString().split("T")[0];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={handleClose}
       />
 
-      {/* Modal content */}
-      <div className="relative z-10 w-full max-w-lg mx-4 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-700">
+      {/* Modal */}
+      <div className="relative z-10 w-full max-w-lg mx-4 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-700 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-zinc-200 dark:border-zinc-700">
-          <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
-            Create New Market
-          </h2>
+          <div>
+            <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
+              {step === "input" ? "Create Prediction Market" : "Review & Create"}
+            </h2>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+              {step === "input" 
+                ? "Paste an X post and let AI generate a prediction" 
+                : "Review and customize your prediction market"}
+            </p>
+          </div>
           <button
             onClick={handleClose}
-            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition"
+            className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
           >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Market Question */}
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-              Market Question *
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Will ETH reach $10,000 by end of 2026?"
-              rows={3}
-              className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-              disabled={isLoading}
-            />
-          </div>
-
-          {/* Close Date & Time */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Close Date *
-              </label>
-              <input
-                type="date"
-                value={closeDate}
-                onChange={(e) => setCloseDate(e.target.value)}
-                min={today}
-                className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={isLoading}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Close Time *
-              </label>
-              <input
-                type="time"
-                value={closeTime}
-                onChange={(e) => setCloseTime(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={isLoading}
-              />
-            </div>
-          </div>
-
-          {/* Initial Liquidity */}
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-              Initial Liquidity (USDC) *
-            </label>
-            <input
-              type="number"
-              value={liquidityAmount}
-              onChange={(e) => setLiquidityAmount(e.target.value)}
-              placeholder="0.1"
-              step="0.001"
-              min="0.001"
-              className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              disabled={isLoading}
-            />
-            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-              This USDC will be used to seed the prediction market liquidity pool
-            </p>
-          </div>
-
-          {/* X Post URL (Optional) */}
-          <div>
-            <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-              X/Twitter Post (Optional)
-            </label>
-            <input
-              type="url"
-              value={xPostUrl}
-              onChange={(e) => setXPostUrl(e.target.value)}
-              placeholder="https://x.com/elonmusk/status/1234567890123456789"
-              className="w-full px-4 py-3 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              disabled={isLoading}
-            />
-            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-              Link this market to a specific tweet for context
-            </p>
-          </div>
-
-          {/* Error Message */}
-          {(formError || hookError) && (
-            <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-              <p className="text-sm text-red-600 dark:text-red-400">
-                {formError || hookError}
-              </p>
-            </div>
-          )}
-
-          {/* Success Message */}
-          {successMessage && (
-            <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-              <p className="text-sm text-green-600 dark:text-green-400">
-                {successMessage}
-              </p>
-            </div>
-          )}
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full py-4 px-6 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold text-lg hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-          >
-            {isLoading ? (
-              <span className="flex items-center justify-center gap-2">
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        {/* Content */}
+        <div className="p-6">
+          {successMessage ? (
+            /* Success State */
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                Creating Market...
-              </span>
-            ) : (
-              "Create Market"
-            )}
-          </button>
-        </form>
+              </div>
+              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
+                Market Created Successfully!
+              </h3>
+              <p className="text-zinc-500 dark:text-zinc-400">
+                Your prediction market is now live.
+              </p>
+            </div>
+          ) : step === "input" ? (
+            /* Step 1: Input X Post URL */
+            <div className="space-y-6">
+              {/* X Post URL Input */}
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                  X/Twitter Post URL
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="w-5 h-5 text-zinc-400" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                    </svg>
+                  </div>
+                  <input
+                    type="url"
+                    value={xPostUrl}
+                    onChange={(e) => setXPostUrl(e.target.value)}
+                    placeholder="https://x.com/user/status/123456789"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                  Paste a link to any X/Twitter post. AI will generate a prediction question from it.
+                </p>
+              </div>
+
+              {/* Error */}
+              {formError && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100 dark:border-red-900/30">
+                  <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>
+                </div>
+              )}
+
+              {/* Generate Button */}
+              <button
+                onClick={handleGeneratePrediction}
+                disabled={!xPostUrl || isGenerating}
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+              >
+                {isGenerating ? (
+                  <>
+                    <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Generating with AI...</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span>Generate Prediction</span>
+                  </>
+                )}
+              </button>
+
+              {/* Divider */}
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white dark:bg-zinc-900 text-zinc-500">or create manually</span>
+                </div>
+              </div>
+
+              {/* Manual Entry Button */}
+              <button
+                onClick={() => setStep("review")}
+                className="w-full py-3 px-4 rounded-xl border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+              >
+                Create Without AI
+              </button>
+            </div>
+          ) : (
+            /* Step 2: Review & Customize */
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* AI Context (if generated) */}
+              {aiContext && (
+                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-900/30">
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    <span className="font-medium">AI Context:</span> {aiContext}
+                  </p>
+                </div>
+              )}
+
+              {/* Question */}
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                  Prediction Question *
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Will [something specific] happen by [date]?"
+                  rows={3}
+                  className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+
+              {/* X Post URL (readonly or editable) */}
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                  X/Twitter Post (optional)
+                </label>
+                <input
+                  type="url"
+                  value={xPostUrl}
+                  onChange={(e) => setXPostUrl(e.target.value)}
+                  placeholder="https://x.com/user/status/123456789"
+                  className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={isLoading}
+                />
+              </div>
+
+              {/* Close Date */}
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                  Market Closes *
+                </label>
+                
+                {/* Quick Duration Buttons */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {[
+                    { label: "1 Day", days: 1 },
+                    { label: "3 Days", days: 3 },
+                    { label: "1 Week", days: 7 },
+                    { label: "2 Weeks", days: 14 },
+                    { label: "1 Month", days: 30 },
+                  ].map((opt) => (
+                    <button
+                      key={opt.days}
+                      type="button"
+                      onClick={() => setDuration(opt.days)}
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-colors"
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <input
+                    type="date"
+                    value={closeDate}
+                    onChange={(e) => setCloseDate(e.target.value)}
+                    min={today}
+                    className="px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                    disabled={isLoading}
+                  />
+                  <input
+                    type="time"
+                    value={closeTime}
+                    onChange={(e) => setCloseTime(e.target.value)}
+                    className="px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+
+              {/* Initial Liquidity */}
+              <div>
+                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                  Initial Liquidity (USDC) *
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.01"
+                    value={liquidityAmount}
+                    onChange={(e) => setLiquidityAmount(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                    disabled={isLoading}
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    <span className="text-zinc-400 text-sm">USDC</span>
+                  </div>
+                </div>
+                <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                  This seeds the liquidity pool. You&apos;ll receive LP tokens.
+                </p>
+              </div>
+
+              {/* Error */}
+              {(formError || hookError) && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100 dark:border-red-900/30">
+                  <p className="text-sm text-red-600 dark:text-red-400">{formError || hookError}</p>
+                </div>
+              )}
+
+              {/* Buttons */}
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setStep("input")}
+                  className="flex-1 py-3 px-4 rounded-xl border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                  disabled={isLoading}
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                >
+                  {isLoading ? (
+                    <>
+                      <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      <span>Creating...</span>
+                    </>
+                  ) : (
+                    <span>Create Market</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );
