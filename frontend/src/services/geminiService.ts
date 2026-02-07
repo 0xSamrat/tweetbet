@@ -1,9 +1,9 @@
 "use server";
 
-import { GoogleGenAI } from "@google/genai";
+import OpenAI from "openai";
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 export interface GeneratedPrediction {
@@ -154,16 +154,17 @@ Tweet Author: @${tweetContent.author}
 Tweet Content: "${tweetContent.text}"
 ${tweetContent.timestamp ? `Posted: ${tweetContent.timestamp}` : ""}
 
-Based on this tweet, generate a prediction market question. The question should:
+Based on this tweet, generate a prediction market question. The question must:
 1. Be a clear YES/NO question that can be objectively resolved
 2. Be engaging and interesting for traders
 3. Have a specific, measurable outcome
 4. Be time-bound (include when it should be resolved)
 5. Relate directly to the content or implications of this tweet
+6. The question MUST be 50 characters or fewer (including spaces and punctuation). Do not exceed 50 characters.
 
 Respond in this exact JSON format only, no markdown:
 {
-  "question": "Will [specific prediction question]?",
+  "question": "Will [specific prediction question]?", // 50 characters max
   "context": "Brief context explaining what this prediction is about and how it relates to the tweet",
   "suggestedCloseTime": "7 days"
 }
@@ -174,12 +175,18 @@ Choose the time based on when the event in the tweet is likely to be resolved.
 Only respond with the JSON, nothing else.`;
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-1.5-flash",
-      contents: prompt,
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      temperature: 0,
     });
 
-    const text = response.text?.trim() || "";
+    const text = completion.choices[0].message.content?.trim() || "";
 
     // Parse JSON response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
@@ -190,7 +197,7 @@ Only respond with the JSON, nothing else.`;
     const parsed = JSON.parse(jsonMatch[0]) as GeneratedPrediction;
     return parsed;
   } catch (error) {
-    console.error("Gemini API error:", error);
+    console.error("OpenAI API error:", error);
     throw new Error("Failed to generate prediction. Please try again.");
   }
 }
