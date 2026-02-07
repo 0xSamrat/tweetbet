@@ -183,7 +183,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
           {/* Initial Liquidity */}
           <div>
             <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-              Initial Liquidity (ETH) *
+              Initial Liquidity (USDC) *
             </label>
             <input
               type="number"
@@ -196,7 +196,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
               disabled={isLoading}
             />
             <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-              This ETH will be used to seed the prediction market liquidity pool
+              This USDC will be used to seed the prediction market liquidity pool
             </p>
           </div>
 

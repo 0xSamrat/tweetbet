@@ -222,7 +222,7 @@ function MarketsSection({ markets, isLoading, error, onRefresh, onMarketClick }:
           />
           <StatCard
             label="Total Volume"
-            value={`${markets.reduce((acc, m) => acc + parseFloat(m.totalVolume), 0).toFixed(2)} ETH`}
+            value={`${markets.reduce((acc, m) => acc + parseFloat(m.totalVolume), 0).toFixed(2)} USDC`}
             icon="💰"
           />
         </div>

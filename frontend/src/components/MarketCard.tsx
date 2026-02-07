@@ -129,7 +129,7 @@ export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps)
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             </svg>
-            <span>{parseFloat(market.totalVolume).toFixed(4)} ETH</span>
+            <span>{parseFloat(market.totalVolume).toFixed(4)} USDC</span>
           </div>
         </div>
 

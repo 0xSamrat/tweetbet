@@ -132,7 +132,7 @@ export function TradeModal({ isOpen, onClose, market, initialSide, onSuccess }: 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                Amount (ETH)
+                Amount (USDC)
               </label>
               <div className="relative">
                 <input
@@ -146,7 +146,7 @@ export function TradeModal({ isOpen, onClose, market, initialSide, onSuccess }: 
                   disabled={isLoading}
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">
-                  ETH
+                  USDC
                 </div>
               </div>
               {/* Quick amounts */}
@@ -168,7 +168,7 @@ export function TradeModal({ isOpen, onClose, market, initialSide, onSuccess }: 
             <div className="p-4 rounded-xl bg-zinc-50 dark:bg-zinc-800/50 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-zinc-500 dark:text-zinc-400">You pay</span>
-                <span className="font-medium text-zinc-900 dark:text-white">{amount} ETH</span>
+                <span className="font-medium text-zinc-900 dark:text-white">{amount} USDC</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-zinc-500 dark:text-zinc-400">Est. shares</span>
@@ -179,7 +179,7 @@ export function TradeModal({ isOpen, onClose, market, initialSide, onSuccess }: 
               <div className="flex justify-between text-sm">
                 <span className="text-zinc-500 dark:text-zinc-400">Potential payout</span>
                 <span className="font-medium text-zinc-900 dark:text-white">
-                  {(estimatedShares * 1).toFixed(4)} ETH
+                  {(estimatedShares * 1).toFixed(4)} USDC
                 </span>
               </div>
             </div>
