@@ -102,6 +102,13 @@ contract MarketFactoryTest is Test {
         
         uint256 initialLiquidity = 10 ether;
         
+        // Create X post reference: https://x.com/elonmusk/status/1876543210987654321
+        string memory xUser = "elonmusk";
+        uint64 xPostId = 1876543210987654321;
+        bytes32 encodedXPost = marketFactory.encodeXPost(xPostId, xUser);
+        console.log("  X Post encoded for user:", xUser);
+        console.log("  X Post ID:", xPostId);
+        
         vm.startPrank(liquidityProvider);
         
         (uint256 marketId, uint256 noId, uint256 liquidity) = marketFactory.createMarketAndSeed{value: initialLiquidity}(
@@ -110,6 +117,7 @@ contract MarketFactoryTest is Test {
             address(0),            // collateral (ETH)
             closeTime,             // close time
             true,                  // canClose (resolver can early-close)
+            encodedXPost,          // xPost (encoded X post reference)
             0,                     // collateralIn (0 means use msg.value for ETH)
             FEE_BPS,               // feeOrHook (pool fee in bps)
             0,                     // minLiquidity
@@ -123,6 +131,39 @@ contract MarketFactoryTest is Test {
         console.log("  Market ID (YES token ID):", marketId);
         console.log("  NO token ID:", noId);
         console.log("  LP tokens minted:", liquidity);
+        
+        // ============ Verify X Post Storage and Decoding ============
+        console.log("\n--- Verifying X Post Storage ---");
+        
+        // Test decodeXPost
+        (uint64 decodedPostId, string memory decodedUser) = marketFactory.decodeXPost(encodedXPost);
+        console.log("  Decoded X Post ID:", decodedPostId);
+        console.log("  Decoded X User:", decodedUser);
+        
+        // Verify values match
+        assertEq(decodedPostId, xPostId, "Post ID mismatch");
+        assertEq(decodedUser, xUser, "User mismatch");
+        
+        // Test getXPost (reads from storage)
+        (uint64 storedPostId, string memory storedUser) = marketFactory.getXPost(marketId);
+        console.log("  Stored X Post ID:", storedPostId);
+        console.log("  Stored X User:", storedUser);
+        assertEq(storedPostId, xPostId, "Stored Post ID mismatch");
+        assertEq(storedUser, xUser, "Stored User mismatch");
+        
+        // Test getXPostUrl
+        string memory xPostUrl = marketFactory.getXPostUrl(marketId);
+        console.log("  Full X Post URL:", xPostUrl);
+        
+        // Verify URL format (should be https://x.com/elonmusk/status/1876543210987654321)
+        string memory expectedUrl = string(abi.encodePacked("https://x.com/", xUser, "/status/", "1876543210987654321"));
+        assertEq(xPostUrl, expectedUrl, "URL mismatch");
+        
+        // Test that getMarket returns xPost
+        (,,,,,,,,,, bytes32 returnedXPost) = marketFactory.getMarket(marketId);
+        assertEq(returnedXPost, encodedXPost, "getMarket xPost mismatch");
+        
+        console.log("  X Post verification PASSED!");
         
         // Print initial token supplies
         _printTokenSupplies(marketId, noId, "After Market Creation");
@@ -219,11 +260,18 @@ contract MarketFactoryTest is Test {
         console.log("  Market close time was:", closeTime);
 
         // ============ STEP 5: Resolver Resolves the Market ============
-        // Randomly decide outcome - sometimes YES wins, sometimes NO wins
+        // Use vm.prevrandao to set a specific random value for deterministic outcome
+        // With block.timestamp = 2592002:
+        //   prevrandao = 0 -> YES wins
+        //   prevrandao = 1 -> NO wins
+        uint256 randomSeed = 1; // Set to 0 for YES wins, 1 for NO wins
+        vm.prevrandao(bytes32(randomSeed));
+        
         bool yesWins = uint256(keccak256(abi.encodePacked(block.timestamp, block.prevrandao))) % 2 == 0;
         
         console.log("\n--- Step 5: Resolver Resolves Market ---");
-        console.log("  Random outcome determined:", yesWins ? "YES WINS!" : "NO WINS!");
+        console.log("  vm.prevrandao set to:", randomSeed);
+        console.log("  Outcome determined:", yesWins ? "YES WINS!" : "NO WINS!");
         
         // Record ETH balances before claiming
         uint256 user1BalBefore = user1.balance;
@@ -246,7 +294,7 @@ contract MarketFactoryTest is Test {
         console.log("\n  Market resolved!");
         
         // Verify market is resolved
-        (,, bool resolved, bool outcome,,,,,,) = marketFactory.getMarket(marketId);
+        (,, bool resolved, bool outcome,,,,,,,) = marketFactory.getMarket(marketId);
         console.log("  Market resolved:", resolved);
         console.log("  Winning outcome (true=YES, false=NO):", outcome);
 
@@ -469,6 +517,7 @@ contract MarketFactoryTest is Test {
             address(usdc),         // collateral (USDC - ERC20!)
             closeTime,             // close time
             true,                  // canClose
+            bytes32(0),            // xPost (no X post linked)
             initialLiquidity,      // collateralIn (USDC amount)
             FEE_BPS,               // feeOrHook
             0,                     // minLiquidity
@@ -585,7 +634,7 @@ contract MarketFactoryTest is Test {
         console.log("  USDC locked in MarketFactory:", usdc.balanceOf(address(marketFactory)));
         
         // Verify market collateral info
-        (,address collateral,,,,, uint256 collateralLocked,,,) = marketFactory.getMarket(marketId);
+        (,address collateral,,,,, uint256 collateralLocked,,,,) = marketFactory.getMarket(marketId);
         console.log("  Collateral token:", collateral);
         console.log("  Collateral locked (from market):", collateralLocked);
     }

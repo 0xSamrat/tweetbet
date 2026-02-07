@@ -20,6 +20,7 @@ contract MarketFactory is ERC6909Minimal {
     error FeeOverflow();
     error NotClosable();
     error InvalidClose();
+    error InvalidXPost();
     error MarketClosed();
     error MarketExists();
     error OnlyResolver();
@@ -49,7 +50,8 @@ contract MarketFactory is ERC6909Minimal {
         address resolver,
         address collateral,
         uint64 close,
-        bool canClose
+        bool canClose,
+        bytes32 xPost
     );
     event Closed(uint256 indexed marketId, uint256 ts, address indexed by);
     event Split(
@@ -95,6 +97,11 @@ contract MarketFactory is ERC6909Minimal {
 
     /// @notice Description per market.
     mapping(uint256 => string) public descriptions;
+
+    /// @notice X/Twitter post reference per market (encoded: postId + username).
+    /// @dev Format: [postId (8 bytes)][userLen (1 byte)][user (15 bytes)][padding (8 bytes)]
+    ///      Decode with decodeXPost(). Returns empty if not set.
+    mapping(uint256 => bytes32) public xPosts;
 
     /// @notice Supply per token id (YES or NO).
     mapping(uint256 => uint256) public totalSupplyId;
@@ -343,6 +350,78 @@ contract MarketFactory is ERC6909Minimal {
     }
 
     /*//////////////////////////////////////////////////////////////
+                              X POST HELPERS
+    //////////////////////////////////////////////////////////////*/
+
+    /// @notice Encode X post data into bytes32 for storage.
+    /// @param postId The X post ID (from URL: x.com/user/status/[postId])
+    /// @param user The X username (max 15 characters)
+    /// @return encoded The packed bytes32 value
+    function encodeXPost(uint64 postId, string calldata user) public pure returns (bytes32 encoded) {
+        uint256 len = bytes(user).length;
+        if (len > 15) revert InvalidXPost();
+        
+        assembly ("memory-safe") {
+            // Load user string data from calldata
+            let userPtr := user.offset
+            let userData := calldataload(userPtr)
+            
+            // Pack: [postId (8 bytes)][len (1 byte)][user (15 bytes)][padding (8 bytes)]
+            encoded := or(
+                shl(192, postId),           // postId in top 8 bytes
+                or(
+                    shl(184, len),          // length in next 1 byte
+                    shr(72, userData)       // user data shifted to fit in 15 bytes
+                )
+            )
+        }
+    }
+
+    /// @notice Decode X post data from bytes32.
+    /// @param encoded The packed bytes32 value
+    /// @return postId The X post ID
+    /// @return user The X username
+    function decodeXPost(bytes32 encoded) public pure returns (uint64 postId, string memory user) {
+        if (encoded == bytes32(0)) return (0, "");
+        
+        assembly ("memory-safe") {
+            // Extract postId from top 8 bytes
+            postId := shr(192, encoded)
+            
+            // Extract length from next 1 byte
+            let len := and(shr(184, encoded), 0xff)
+            
+            // Allocate string memory
+            user := mload(0x40)
+            mstore(0x40, add(user, 0x40)) // 32 (length) + 32 (data, rounded)
+            mstore(user, len)
+            
+            // Extract user data (shift left to align, then store)
+            let userData := shl(72, encoded)
+            mstore(add(user, 0x20), userData)
+        }
+    }
+
+    /// @notice Get full X post URL for a market.
+    /// @param marketId The market ID
+    /// @return url The full X post URL (empty if not set)
+    function getXPostUrl(uint256 marketId) public view returns (string memory url) {
+        bytes32 encoded = xPosts[marketId];
+        if (encoded == bytes32(0)) return "";
+        
+        (uint64 postId, string memory user) = decodeXPost(encoded);
+        return string(abi.encodePacked("https://x.com/", user, "/status/", _toString(uint256(postId))));
+    }
+
+    /// @notice Get X post data for a market.
+    /// @param marketId The market ID
+    /// @return postId The X post ID (0 if not set)
+    /// @return user The X username (empty if not set)
+    function getXPost(uint256 marketId) public view returns (uint64 postId, string memory user) {
+        return decodeXPost(xPosts[marketId]);
+    }
+
+    /*//////////////////////////////////////////////////////////////
                             MARKET LIFECYCLE
     //////////////////////////////////////////////////////////////*/
 
@@ -354,14 +433,16 @@ contract MarketFactory is ERC6909Minimal {
     /// @param collateral Collateral token (address(0) for ETH)
     /// @param close Resolve allowed after this timestamp
     /// @param canClose If true, resolver can early-close
+    /// @param xPost Encoded X post (use encodeXPost(), or bytes32(0) for none)
     function createMarket(
         string calldata description,
         address resolver,
         address collateral,
         uint64 close,
-        bool canClose
+        bool canClose,
+        bytes32 xPost
     ) public nonReentrant returns (uint256 marketId, uint256 noId) {
-        (marketId, noId) = _createMarket(description, resolver, collateral, close, canClose);
+        (marketId, noId) = _createMarket(description, resolver, collateral, close, canClose, xPost);
     }
 
     /// @notice Create a market and seed it with initial liquidity in one tx.
@@ -372,6 +453,7 @@ contract MarketFactory is ERC6909Minimal {
     /// @param collateral Collateral token (address(0) for ETH)
     /// @param close Resolve allowed after this timestamp
     /// @param canClose If true, resolver can early-close
+    /// @param xPost Encoded X post (use encodeXPost(), or bytes32(0) for none)
     /// @param collateralIn Amount of collateral to split into shares
     /// @param feeOrHook Pool fee tier (bps) or hook address
     /// @param minLiquidity Minimum LP tokens to receive
@@ -383,13 +465,14 @@ contract MarketFactory is ERC6909Minimal {
         address collateral, // Collateral token address (address(0) for ETH)
         uint64 close, // Timestamp after which oracle can resolve
         bool canClose, // Can the oracle close early
+        bytes32 xPost, // Encoded X post (use encodeXPost(), or bytes32(0) for none)
         uint256 collateralIn, // Amount of collateral to split into shares or amount of ETH to be sent
         uint256 feeOrHook, 
         uint256 minLiquidity, // Minimum LP tokens to receive
         address to, // Recipient of LP tokens
         uint256 deadline // Timestamp after which the tx reverts
     ) public payable nonReentrant returns (uint256 marketId, uint256 noId, uint256 liquidity) {
-        (marketId, noId) = _createMarket(description, resolver, collateral, close, canClose);
+        (marketId, noId) = _createMarket(description, resolver, collateral, close, canClose, xPost);
         (, liquidity) = _splitAndAddLiquidity(
             marketId, collateralIn, feeOrHook, 0, 0, minLiquidity, to, deadline
         );
@@ -401,7 +484,8 @@ contract MarketFactory is ERC6909Minimal {
         address resolver,
         address collateral,
         uint64 close,
-        bool canClose
+        bool canClose,
+        bytes32 xPost
     ) internal returns (uint256 marketId, uint256 noId) {
         if (resolver == address(0)) revert InvalidResolver(); // If the resolver is not zero that mean the market is already created
         if (close <= block.timestamp) revert InvalidClose(); // If the close time is less than current time that mean market is already closed
@@ -422,9 +506,12 @@ contract MarketFactory is ERC6909Minimal {
         });
 
         descriptions[marketId] = description;
+        if (xPost != bytes32(0)) {
+            xPosts[marketId] = xPost;
+        }
         allMarkets.push(marketId);
 
-        emit Created(marketId, noId, description, resolver, collateral, close, canClose);
+        emit Created(marketId, noId, description, resolver, collateral, close, canClose, xPost);
     }
 
     /// @notice Early-close a market (only resolver, only if canClose).
@@ -1329,7 +1416,8 @@ contract MarketFactory is ERC6909Minimal {
             uint256 collateralLocked,
             uint256 yesSupply,
             uint256 noSupply,
-            string memory description
+            string memory description,
+            bytes32 xPost
         )
     {
         Market storage m = markets[marketId];
@@ -1344,6 +1432,7 @@ contract MarketFactory is ERC6909Minimal {
         yesSupply = totalSupplyId[marketId];
         noSupply = totalSupplyId[getNoId(marketId)];
         description = descriptions[marketId];
+        xPost = xPosts[marketId];
     }
 
     /// @notice Pool reserves and implied probability.
@@ -1376,6 +1465,7 @@ contract MarketFactory is ERC6909Minimal {
             uint256[] memory yesSupplies,
             uint256[] memory noSupplies,
             string[] memory descs,
+            bytes32[] memory xPostsArr,
             uint256 next
         )
     {
@@ -1391,6 +1481,7 @@ contract MarketFactory is ERC6909Minimal {
                 new uint256[](0),
                 new uint256[](0),
                 new string[](0),
+                new bytes32[](0),
                 0
             );
         }
@@ -1408,6 +1499,7 @@ contract MarketFactory is ERC6909Minimal {
         yesSupplies = new uint256[](n);
         noSupplies = new uint256[](n);
         descs = new string[](n);
+        xPostsArr = new bytes32[](n);
 
         for (uint256 i; i != n; ++i) {
             uint256 mId = allMarkets[start + i];
@@ -1422,6 +1514,7 @@ contract MarketFactory is ERC6909Minimal {
             yesSupplies[i] = totalSupplyId[mId];
             noSupplies[i] = totalSupplyId[getNoId(mId)];
             descs[i] = descriptions[mId];
+            xPostsArr[i] = xPosts[mId];
         }
 
         next = (end < len) ? end : 0;
@@ -1440,7 +1533,8 @@ contract MarketFactory is ERC6909Minimal {
             uint256[] memory collateralAmounts,
             uint256[] memory yesSupplies,
             uint256[] memory noSupplies,
-            string[] memory descs
+            string[] memory descs,
+            bytes32[] memory xPostsArr
         )
     {
         uint256 n = ids.length;
@@ -1452,6 +1546,7 @@ contract MarketFactory is ERC6909Minimal {
         yesSupplies = new uint256[](n);
         noSupplies = new uint256[](n);
         descs = new string[](n);
+        xPostsArr = new bytes32[](n);
 
         for (uint256 i; i != n; ++i) {
             uint256 mId = ids[i];
@@ -1466,6 +1561,7 @@ contract MarketFactory is ERC6909Minimal {
             yesSupplies[i] = totalSupplyId[mId];
             noSupplies[i] = totalSupplyId[getNoId(mId)];
             descs[i] = descriptions[mId];
+            xPostsArr[i] = xPosts[mId];
         }
     }
 
