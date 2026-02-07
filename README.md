@@ -163,24 +163,106 @@ forge test --gas-report
 
 ## Deployment
 
+The contracts use **CREATE2** for deterministic deployment addresses. The same addresses will be deployed on any chain when using the same deployer and salt.
+
 ### Local (Anvil)
+
+#### Step 1: Start Anvil
 ```bash
-# Start local node
+# In a terminal, start the local blockchain
 anvil
-
-# Deploy
-forge script script/Counter.s.sol --rpc-url http://localhost:8545 --broadcast
 ```
 
-### Testnet
+Keep this terminal running. You'll see 10 test accounts with 10,000 ETH each.
+
+#### Step 2: Fund Your Deployer (if using keystore)
 ```bash
-# Set environment variables
-export PRIVATE_KEY=<your-private-key>
-export RPC_URL=<testnet-rpc-url>
-
-# Deploy
-forge script script/Counter.s.sol --rpc-url $RPC_URL --private-key $PRIVATE_KEY --broadcast
+# Skip this if using Anvil's default private key
+DEPLOYER=$(cast wallet address --account deployer)
+cast send $DEPLOYER --value 10ether \
+  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+  --rpc-url http://127.0.0.1:8545
 ```
+
+#### Step 3: Deploy
+```bash
+# Option A: Using Anvil's default private key (quick testing)
+forge script script/Deploy.s.sol:Deploy \
+  --rpc-url http://127.0.0.1:8545 \
+  --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 \
+  --broadcast
+
+# Option B: Using keystore (recommended)
+forge script script/Deploy.s.sol:Deploy \
+  --rpc-url http://127.0.0.1:8545 \
+  --account deployer \
+  --broadcast
+```
+
+---
+
+### Testnet Deployment
+
+#### Step 1 (Optional): Create an Encrypted Keystore
+If you haven't created a keystore yet, create one to securely store your private key:
+
+```bash
+# This will prompt for your private key and a password
+cast wallet import deployer --interactive
+```
+
+You'll see:
+```
+Enter private key:
+Enter password:
+`deployer` keystore was saved successfully. Address: 0xYourAddress...
+```
+
+#### Step 1.5 (Optional): Verify the Keystore was Created
+```bash
+# List all keystores
+cast wallet list
+
+# Check your deployer address
+cast wallet address --account deployer
+```
+
+#### Step 2: Deploy to Testnet
+Make sure your wallet has testnet ETH (use faucets for testnets).
+
+```bash
+# Deploy to Base Sepolia
+forge script script/Deploy.s.sol:Deploy \
+  --rpc-url https://sepolia.base.org \
+  --account deployer \
+  --broadcast
+
+# Deploy to Sepolia
+forge script script/Deploy.s.sol:Deploy \
+  --rpc-url https://rpc.sepolia.org \
+  --account deployer \
+  --broadcast
+
+# Deploy with contract verification
+forge script script/Deploy.s.sol:Deploy \
+  --rpc-url https://sepolia.base.org \
+  --account deployer \
+  --broadcast \
+  --verify
+```
+
+---
+
+### Deployed Addresses (CREATE2)
+
+Using `salt = 1`, the contracts deploy to these deterministic addresses:
+
+| Contract | Address |
+|----------|---------|
+| **PredictionAMM** | `0x0B60DE51f67B8e0Dfd1E7Cea1A3487A28010E162` |
+| **MarketFactory** | `0xB4a0046a84977F81d4A0BA42cf05e7a6b6726992` |
+
+> **Note:** These addresses are the same on any EVM chain when deployed from the same deployer address with the same salt.
 
 ## Token IDs
 
