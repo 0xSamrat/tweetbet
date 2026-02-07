@@ -175,6 +175,25 @@ export function useMarkets(chainId: number = arcTestnet.id): UseMarketsReturn {
         ] = result;
 
         const now = BigInt(Math.floor(Date.now() / 1000));
+        const DEFAULT_FEE_BPS = BigInt(30); // 0.3% fee tier
+        
+        // Fetch pool states for all markets in parallel
+        const poolStatePromises = marketIds.map(async (marketId) => {
+          try {
+            const poolState = await publicClient.readContract({
+              address: MARKET_FACTORY_ADDRESS,
+              abi: marketFactoryAbi,
+              functionName: "getPoolState",
+              args: [marketId, DEFAULT_FEE_BPS],
+            }) as [bigint, bigint, bigint, bigint];
+            return poolState;
+          } catch {
+            // Pool may not exist yet
+            return null;
+          }
+        });
+        
+        const poolStates = await Promise.all(poolStatePromises);
         
         const parsedMarkets: MarketData[] = marketIds.map((marketId, i) => {
           const { resolved, outcome, canClose } = parseStates(states[i]);
@@ -182,14 +201,27 @@ export function useMarkets(chainId: number = arcTestnet.id): UseMarketsReturn {
           const yesSupply = yesSupplies[i];
           const noSupply = noSupplies[i];
           
-          // Calculate YES probability based on supplies
-          // In AMM, probability is inversely related to supply (more supply = lower price)
-          // P(YES) = NO_supply / (YES_supply + NO_supply)
+          // Calculate YES probability from pool state (accurate AMM price)
           let yesProbability = 50;
-          const totalSupply = yesSupply + noSupply;
-          if (totalSupply > BigInt(0)) {
-            yesProbability = Number((noSupply * BigInt(100)) / totalSupply);
+          const poolState = poolStates[i];
+          
+          if (poolState) {
+            const [rYes, rNo, pYesNum, pYesDen] = poolState;
+            // pYesNum / pYesDen gives the YES probability
+            if (pYesDen > BigInt(0)) {
+              yesProbability = Number((pYesNum * BigInt(100)) / pYesDen);
+            } else if (rYes > BigInt(0) || rNo > BigInt(0)) {
+              // Fallback: calculate from reserves
+              // In constant product AMM: P(YES) = rNo / (rYes + rNo)
+              const total = rYes + rNo;
+              if (total > BigInt(0)) {
+                yesProbability = Number((rNo * BigInt(100)) / total);
+              }
+            }
           }
+          
+          // Clamp to valid range
+          yesProbability = Math.max(1, Math.min(99, yesProbability));
 
           // Parse X post
           let xPost: MarketData["xPost"] = null;
