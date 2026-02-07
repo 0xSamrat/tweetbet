@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { MarketData } from "@/hooks/useMarkets";
 import { TradeModal } from "@/components/TradeModal";
 
@@ -11,10 +12,18 @@ interface MarketCardProps {
 }
 
 export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps) {
+  const router = useRouter();
   const [showTradeModal, setShowTradeModal] = useState(false);
   const [tradeSide, setTradeSide] = useState<"yes" | "no">("yes");
 
   const handleClick = () => {
+    // Navigate to market page using xPostId from the market's xPost
+    if (market.xPost?.postId) {
+      router.push(`/market/${market.xPost.postId.toString()}`);
+    } else {
+      // Fallback to marketId if no xPost
+      router.push(`/market/${market.marketId.toString()}`);
+    }
     if (onClick) onClick(market);
   };
 

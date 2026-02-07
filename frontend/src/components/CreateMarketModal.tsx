@@ -176,7 +176,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
           description: description.trim(),
           closeTime: Number(closeTimestamp),
           xPostUrl: xPostUrl.trim() || undefined,
-          xPostId: parsed?.postId || undefined,
+          xPostId: parsed?.postId?.toString() || undefined,
           aiContext: aiContext || undefined,
           aiSuggestedCloseTime: aiSuggestedCloseTime || undefined,
           tweetContent: tweetContent || undefined,
