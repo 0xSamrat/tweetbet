@@ -196,6 +196,7 @@ function MarketsSection({ markets, isLoading, error, onRefresh, onMarketClick }:
               key={market.marketId.toString()}
               market={market}
               onClick={onMarketClick}
+              onTradeSuccess={onRefresh}
             />
           ))}
         </div>

@@ -50,6 +50,26 @@ export interface CreateMarketResult {
   liquidity: bigint;
 }
 
+export interface BuyParams {
+  /** Market ID */
+  marketId: bigint;
+  /** Amount of ETH to spend (as string, e.g., "0.01") */
+  amount: string;
+  /** Pool fee in basis points (default 30 = 0.3%) */
+  feeBps?: bigint;
+  /** Minimum output shares (slippage protection, default 0) */
+  minOut?: bigint;
+}
+
+export interface BuyResult {
+  /** Transaction hash */
+  txHash: Hex;
+  /** Transaction receipt */
+  receipt: TransactionReceipt;
+  /** Amount of shares received */
+  sharesOut: bigint;
+}
+
 export interface UseMarketFactoryState {
   isLoading: boolean;
   error: string | null;
@@ -59,6 +79,10 @@ export interface UseMarketFactoryState {
 export interface UseMarketFactoryActions {
   /** Create a new market with initial liquidity */
   createMarketAndSeed: (params: CreateMarketParams) => Promise<CreateMarketResult>;
+  /** Buy YES shares with ETH */
+  buyYes: (params: BuyParams) => Promise<BuyResult>;
+  /** Buy NO shares with ETH */
+  buyNo: (params: BuyParams) => Promise<BuyResult>;
   /** Clear any error */
   clearError: () => void;
 }
@@ -252,11 +276,228 @@ export function useMarketFactory(): UseMarketFactoryReturn {
     []
   );
 
+  /**
+   * Buy YES shares with ETH
+   */
+  const buyYes = React.useCallback(
+    async (params: BuyParams): Promise<BuyResult> => {
+      if (!MARKET_FACTORY_ADDRESS) {
+        throw new Error("MARKET_FACTORY_ADDRESS not configured");
+      }
+
+      if (typeof window === "undefined" || !window.ethereum) {
+        throw new Error("MetaMask not found. Please install MetaMask.");
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const walletClient = createWalletClient({
+          transport: custom(window.ethereum),
+        });
+
+        const [account] = await walletClient.getAddresses();
+        if (!account) {
+          throw new Error("No account connected. Please connect MetaMask.");
+        }
+
+        const chainIdHex = await window.ethereum.request({
+          method: "eth_chainId",
+        });
+        const chainId = parseInt(chainIdHex as string, 16) as SupportedChainId;
+
+        const chain = SUPPORTED_CHAINS[chainId];
+        if (!chain) {
+          throw new Error(`Unsupported chain (${chainId}).`);
+        }
+
+        const {
+          marketId,
+          amount,
+          feeBps = BigInt(30),
+          minOut = BigInt(0),
+        } = params;
+
+        const ethValue = parseEther(amount);
+        const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600);
+
+        console.log("Buying YES shares:", {
+          marketId: marketId.toString(),
+          amount,
+          feeBps: feeBps.toString(),
+        });
+
+        const txHash = await walletClient.writeContract({
+          address: MARKET_FACTORY_ADDRESS,
+          abi: marketFactoryAbi,
+          functionName: "buyYes",
+          args: [
+            marketId,
+            BigInt(0), // collateralIn (0 = use msg.value for ETH)
+            minOut, // minYesOut
+            BigInt(0), // minSwapOut
+            feeBps, // feeOrHook
+            account, // to
+            deadline,
+          ],
+          value: ethValue,
+          account,
+          chain,
+        });
+
+        console.log("buyYes tx sent:", txHash);
+        setLastTxHash(txHash);
+
+        const publicClient = createPublicClient({
+          chain,
+          transport: http(),
+        });
+
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+
+        if (receipt.status === "reverted") {
+          throw new Error("Transaction reverted");
+        }
+
+        // Parse Transfer event to get shares received
+        // The last Transfer event should be the YES shares transfer to user
+        const transferLogs = receipt.logs.filter(
+          (log) => log.topics[0] === "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+        );
+        const sharesOut = transferLogs.length > 0 
+          ? BigInt(transferLogs[transferLogs.length - 1].data || "0")
+          : ethValue;
+
+        return { txHash, receipt, sharesOut };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Unknown error";
+        console.error("buyYes error:", err);
+        setError(message);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
+  /**
+   * Buy NO shares with ETH
+   */
+  const buyNo = React.useCallback(
+    async (params: BuyParams): Promise<BuyResult> => {
+      if (!MARKET_FACTORY_ADDRESS) {
+        throw new Error("MARKET_FACTORY_ADDRESS not configured");
+      }
+
+      if (typeof window === "undefined" || !window.ethereum) {
+        throw new Error("MetaMask not found. Please install MetaMask.");
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const walletClient = createWalletClient({
+          transport: custom(window.ethereum),
+        });
+
+        const [account] = await walletClient.getAddresses();
+        if (!account) {
+          throw new Error("No account connected. Please connect MetaMask.");
+        }
+
+        const chainIdHex = await window.ethereum.request({
+          method: "eth_chainId",
+        });
+        const chainId = parseInt(chainIdHex as string, 16) as SupportedChainId;
+
+        const chain = SUPPORTED_CHAINS[chainId];
+        if (!chain) {
+          throw new Error(`Unsupported chain (${chainId}).`);
+        }
+
+        const {
+          marketId,
+          amount,
+          feeBps = BigInt(30),
+          minOut = BigInt(0),
+        } = params;
+
+        const ethValue = parseEther(amount);
+        const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600);
+
+        console.log("Buying NO shares:", {
+          marketId: marketId.toString(),
+          amount,
+          feeBps: feeBps.toString(),
+        });
+
+        const txHash = await walletClient.writeContract({
+          address: MARKET_FACTORY_ADDRESS,
+          abi: marketFactoryAbi,
+          functionName: "buyNo",
+          args: [
+            marketId,
+            BigInt(0), // collateralIn (0 = use msg.value for ETH)
+            minOut, // minNoOut
+            BigInt(0), // minSwapOut
+            feeBps, // feeOrHook
+            account, // to
+            deadline,
+          ],
+          value: ethValue,
+          account,
+          chain,
+        });
+
+        console.log("buyNo tx sent:", txHash);
+        setLastTxHash(txHash);
+
+        const publicClient = createPublicClient({
+          chain,
+          transport: http(),
+        });
+
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+        });
+
+        if (receipt.status === "reverted") {
+          throw new Error("Transaction reverted");
+        }
+
+        // Parse Transfer event to get shares received
+        const transferLogs = receipt.logs.filter(
+          (log) => log.topics[0] === "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+        );
+        const sharesOut = transferLogs.length > 0 
+          ? BigInt(transferLogs[transferLogs.length - 1].data || "0")
+          : ethValue;
+
+        return { txHash, receipt, sharesOut };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Unknown error";
+        console.error("buyNo error:", err);
+        setError(message);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    []
+  );
+
   return {
     isLoading,
     error,
     lastTxHash,
     createMarketAndSeed,
+    buyYes,
+    buyNo,
     clearError,
   };
 }

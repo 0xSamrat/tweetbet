@@ -1,16 +1,39 @@
 "use client";
 
+import { useState } from "react";
 import type { MarketData } from "@/hooks/useMarkets";
-import { formatEther } from "viem";
+import { TradeModal } from "@/components/TradeModal";
 
 interface MarketCardProps {
   market: MarketData;
   onClick?: (market: MarketData) => void;
+  onTradeSuccess?: () => void;
 }
 
-export function MarketCard({ market, onClick }: MarketCardProps) {
+export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps) {
+  const [showTradeModal, setShowTradeModal] = useState(false);
+  const [tradeSide, setTradeSide] = useState<"yes" | "no">("yes");
+
   const handleClick = () => {
     if (onClick) onClick(market);
+  };
+
+  const handleYesClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setTradeSide("yes");
+    setShowTradeModal(true);
+  };
+
+  const handleNoClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setTradeSide("no");
+    setShowTradeModal(true);
+  };
+
+  const handleTradeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setTradeSide("yes");
+    setShowTradeModal(true);
   };
 
   // Status badge
@@ -113,10 +136,7 @@ export function MarketCard({ market, onClick }: MarketCardProps) {
         {/* Trade Button */}
         {market.isOpen && (
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              if (onClick) onClick(market);
-            }}
+            onClick={handleTradeClick}
             className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-medium hover:from-blue-700 hover:to-purple-700 transition-all"
           >
             Trade
@@ -128,19 +148,28 @@ export function MarketCard({ market, onClick }: MarketCardProps) {
       {market.isOpen && (
         <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
           <button
-            onClick={(e) => e.stopPropagation()}
+            onClick={handleYesClick}
             className="py-2.5 rounded-xl bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400 font-semibold text-sm transition-colors"
           >
             Yes {market.yesProbability}%
           </button>
           <button
-            onClick={(e) => e.stopPropagation()}
+            onClick={handleNoClick}
             className="py-2.5 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 font-semibold text-sm transition-colors"
           >
             No {100 - market.yesProbability}%
           </button>
         </div>
       )}
+
+      {/* Trade Modal */}
+      <TradeModal
+        isOpen={showTradeModal}
+        onClose={() => setShowTradeModal(false)}
+        market={market}
+        initialSide={tradeSide}
+        onSuccess={onTradeSuccess}
+      />
     </div>
   );
 }
