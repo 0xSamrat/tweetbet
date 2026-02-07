@@ -7,6 +7,7 @@ import { WalletInfo } from "@/components/WalletInfo";
 import { SendUSDC } from "@/components/SendUSDC";
 import { GatewayDeposit } from "@/components/GatewayDeposit";
 import { GatewayTransfer } from "@/components/GatewayTransfer";
+import { CreateMarketModal } from "@/components/CreateMarketModal";
 import { arcTestnet, baseSepolia } from "viem/chains";
 import type { SupportedChainId } from "@/hooks/useWallet";
 import type { Address } from "viem";
@@ -16,6 +17,7 @@ export function Header() {
   const [showModal, setShowModal] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showChainDropdown, setShowChainDropdown] = useState(false);
+  const [showCreateMarket, setShowCreateMarket] = useState(false);
   const [activeTab, setActiveTab] = useState<"send" | "deposit" | "transfer">("send");
 
   // Chain options for MetaMask
@@ -59,6 +61,17 @@ export function Header() {
 
           {/* Right side */}
           <div className="flex items-center gap-4">
+            {/* Create Market Button - Only show when connected */}
+            {isConnected && address && (
+              <button
+                onClick={() => setShowCreateMarket(true)}
+                className="flex items-center justify-center h-10 w-10 rounded-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold text-xl hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg hover:shadow-xl hover:scale-105"
+                title="Create Market"
+              >
+                +
+              </button>
+            )}
+
             {isConnected && address ? (
               <div className="relative">
                 <button
@@ -278,6 +291,15 @@ export function Header() {
           </div>
         </div>
       )}
+
+      {/* Create Market Modal */}
+      <CreateMarketModal
+        isOpen={showCreateMarket}
+        onClose={() => setShowCreateMarket(false)}
+        onSuccess={(marketId) => {
+          console.log("Market created:", marketId.toString());
+        }}
+      />
     </>
   );
 }

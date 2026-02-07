@@ -23,7 +23,7 @@ export function encodeXPost(postId: bigint, user: string): Hex {
   // Write postId (big-endian, 8 bytes at positions 0-7)
   const postIdBigInt = BigInt(postId);
   for (let i = 0; i < 8; i++) {
-    result[7 - i] = Number((postIdBigInt >> BigInt(i * 8)) & 0xFFn);
+    result[7 - i] = Number((postIdBigInt >> BigInt(i * 8)) & BigInt(0xFF));
   }
   
   // Write userLen (1 byte at position 8)
@@ -57,9 +57,9 @@ export function decodeXPost(encoded: Hex): { postId: bigint; user: string } | nu
   }
   
   // Read postId (big-endian, 8 bytes from positions 0-7)
-  let postId = 0n;
+  let postId = BigInt(0);
   for (let i = 0; i < 8; i++) {
-    postId = (postId << 8n) | BigInt(bytes[i]);
+    postId = (postId << BigInt(8)) | BigInt(bytes[i]);
   }
   
   // Read userLen (1 byte at position 8)
