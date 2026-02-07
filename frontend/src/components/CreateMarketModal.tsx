@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { useMarketFactory } from "@/hooks/useMarketFactory";
 import { encodeXPost, parseXPostUrl } from "@/utils/xPostCodec";
 import { generatePredictionFromTweet } from "@/services/geminiService";
+import { saveMarketToDatabase } from "@/services/marketService";
+import { useWallet } from "@/contexts/WalletContext";
 import type { Hex } from "viem";
 
 interface CreateMarketModalProps {
@@ -14,6 +16,7 @@ interface CreateMarketModalProps {
 
 export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketModalProps) {
   const { createMarketAndSeed, isLoading, error: hookError } = useMarketFactory();
+  const { wallet } = useWallet();
   
   // Step state: "input" for X URL input, "review" for reviewing/editing
   const [step, setStep] = useState<"input" | "review">("input");
@@ -22,9 +25,14 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
   const [xPostUrl, setXPostUrl] = useState("");
   const [description, setDescription] = useState("");
   const [aiContext, setAiContext] = useState("");
+  const [aiSuggestedCloseTime, setAiSuggestedCloseTime] = useState("");
   const [closeDate, setCloseDate] = useState("");
   const [closeTime, setCloseTime] = useState("23:59");
   const [liquidityAmount, setLiquidityAmount] = useState("0.01");
+  
+  // Scraped tweet data for MongoDB
+  const [tweetContent, setTweetContent] = useState("");
+  const [tweetAuthor, setTweetAuthor] = useState("");
   
   // Loading states
   const [isGenerating, setIsGenerating] = useState(false);
@@ -38,9 +46,12 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
       setXPostUrl("");
       setDescription("");
       setAiContext("");
+      setAiSuggestedCloseTime("");
       setCloseDate("");
       setCloseTime("23:59");
       setLiquidityAmount("0.01");
+      setTweetContent("");
+      setTweetAuthor("");
       setFormError(null);
       setSuccessMessage(null);
     }
@@ -87,7 +98,11 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
       const result = await generatePredictionFromTweet(xPostUrl);
       setDescription(result.question);
       setAiContext(result.context);
+      setAiSuggestedCloseTime(result.suggestedCloseTime);
       applyCloseTimeSuggestion(result.suggestedCloseTime);
+      // Store scraped tweet data if available
+      if (result.tweetContent) setTweetContent(result.tweetContent);
+      if (result.tweetAuthor) setTweetAuthor(result.tweetAuthor);
       setStep("review");
     } catch (err) {
       setFormError(err instanceof Error ? err.message : "Failed to generate prediction");
@@ -150,6 +165,32 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
         liquidityAmount: liquidityAmount,
         xPost,
       });
+
+      // Save market data to MongoDB
+      try {
+        const parsed = xPostUrl.trim() && isValidXUrl(xPostUrl) ? parseXPostUrl(xPostUrl.trim()) : null;
+        await saveMarketToDatabase({
+          marketId: result.marketId.toString(),
+          ammAddress: result.ammAddress,
+          creatorAddress: wallet?.address || "",
+          description: description.trim(),
+          closeTime: Number(closeTimestamp),
+          xPostUrl: xPostUrl.trim() || undefined,
+          xPostId: parsed?.postId || undefined,
+          aiContext: aiContext || undefined,
+          aiSuggestedCloseTime: aiSuggestedCloseTime || undefined,
+          tweetContent: tweetContent || undefined,
+          tweetAuthor: tweetAuthor || undefined,
+          initialLiquidity: liquidityAmount,
+          createdAt: new Date(),
+          chainId: 5115, // Citrea testnet
+          transactionHash: result.transactionHash,
+        });
+        console.log("Market saved to MongoDB successfully");
+      } catch (dbError) {
+        console.error("Failed to save to MongoDB:", dbError);
+        // Don't fail the whole operation if MongoDB save fails
+      }
 
       setSuccessMessage(`Market created successfully!`);
       

@@ -10,6 +10,10 @@ export interface GeneratedPrediction {
   question: string;
   context: string;
   suggestedCloseTime: string; // e.g., "7 days", "30 days", "1 day"
+  // Include scraped tweet data for MongoDB storage
+  tweetContent?: string;
+  tweetAuthor?: string;
+  tweetTimestamp?: string;
 }
 
 interface ScrapedTweet {
@@ -194,8 +198,17 @@ Only respond with the JSON, nothing else.`;
       throw new Error("Failed to parse AI response");
     }
 
-    const parsed = JSON.parse(jsonMatch[0]) as GeneratedPrediction;
-    return parsed;
+    const parsed = JSON.parse(jsonMatch[0]);
+    
+    // Return with scraped tweet data included
+    return {
+      question: parsed.question,
+      context: parsed.context,
+      suggestedCloseTime: parsed.suggestedCloseTime,
+      tweetContent: tweetContent.text,
+      tweetAuthor: tweetContent.author,
+      tweetTimestamp: tweetContent.timestamp,
+    } as GeneratedPrediction;
   } catch (error) {
     console.error("OpenAI API error:", error);
     throw new Error("Failed to generate prediction. Please try again.");
