@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { createPublicClient, http } from "viem";
 import { arcTestnet } from "viem/chains";
 import { Header } from "@/components/Header";
+import { AddLiquidityModal } from "@/components/AddLiquidityModal";
 import { getMarketByXPostId } from "@/services/marketService";
 import { useMarketFactory } from "@/hooks/useMarketFactory";
 import { useWallet } from "@/contexts/WalletContext";
@@ -44,6 +45,7 @@ export default function MarketPage() {
   const [tradeType, setTradeType] = useState<"yes" | "no">("yes");
   const [tradeError, setTradeError] = useState<string | null>(null);
   const [tradeSuccess, setTradeSuccess] = useState<string | null>(null);
+  const [showLiquidityModal, setShowLiquidityModal] = useState(false);
 
   // Fetch market data from MongoDB
   useEffect(() => {
@@ -474,6 +476,18 @@ export default function MarketPage() {
                       `Buy ${tradeType.toUpperCase()} for ${tradeAmount} USDC`
                     )}
                   </button>
+                  
+                  {/* Add Liquidity Button */}
+                  <button
+                    onClick={() => setShowLiquidityModal(true)}
+                    disabled={!wallet.isConnected}
+                    className="w-full mt-3 py-3 px-6 rounded-md font-semibold text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add Liquidity
+                  </button>
                 </>
               )}
             </div>
@@ -568,6 +582,24 @@ export default function MarketPage() {
           )}
         </div>
       </main>
+      
+      {/* Add Liquidity Modal */}
+      <AddLiquidityModal
+        isOpen={showLiquidityModal}
+        onClose={() => setShowLiquidityModal(false)}
+        market={{
+          marketId: market.marketId,
+          question: market.question,
+          yesProbability: yesProbability,
+          totalVolume: poolState ? (Number(poolState.totalLiquidity) / 1e18).toFixed(4) : "0",
+        }}
+        onSuccess={() => {
+          // Refresh pool state after adding liquidity
+          setTimeout(() => {
+            window.location.reload();
+          }, 2000);
+        }}
+      />
     </div>
   );
 }

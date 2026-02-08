@@ -4,10 +4,18 @@ import { useState } from "react";
 import { useMarketFactory } from "@/hooks/useMarketFactory";
 import type { MarketData } from "@/hooks/useMarkets";
 
+// Flexible market type that works with both MarketData and MarketRecord
+interface MarketInput {
+  marketId: bigint | string;
+  question: string;
+  yesProbability?: number;
+  totalVolume?: string;
+}
+
 interface AddLiquidityModalProps {
   isOpen: boolean;
   onClose: () => void;
-  market: MarketData;
+  market: MarketInput;
   onSuccess?: () => void;
 }
 
@@ -37,8 +45,13 @@ export function AddLiquidityModal({ isOpen, onClose, market, onSuccess }: AddLiq
     }
 
     try {
+      // Support both bigint and string marketId
+      const marketId = typeof market.marketId === 'string' 
+        ? BigInt(market.marketId) 
+        : market.marketId;
+      
       const result = await addLiquidity({
-        marketId: market.marketId,
+        marketId,
         amount,
       });
       setSuccessMessage(`Liquidity added! TX: ${result.txHash.slice(0, 10)}...`);
@@ -137,16 +150,22 @@ export function AddLiquidityModal({ isOpen, onClose, market, onSuccess }: AddLiq
           </div>
 
           {/* Pool Stats */}
-          <div className="p-3 bg-zinc-800/50 rounded-md space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-zinc-400">Current Probability</span>
-              <span className="text-white font-medium">{market.yesProbability}% YES</span>
+          {(market.yesProbability !== undefined || market.totalVolume !== undefined) && (
+            <div className="p-3 bg-zinc-800/50 rounded-md space-y-2">
+              {market.yesProbability !== undefined && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-zinc-400">Current Probability</span>
+                  <span className="text-white font-medium">{market.yesProbability}% YES</span>
+                </div>
+              )}
+              {market.totalVolume !== undefined && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-zinc-400">Pool Volume</span>
+                  <span className="text-white font-medium">{parseFloat(market.totalVolume).toFixed(4)} ETH</span>
+                </div>
+              )}
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-zinc-400">Pool Volume</span>
-              <span className="text-white font-medium">{parseFloat(market.totalVolume).toFixed(4)} ETH</span>
-            </div>
-          </div>
+          )}
 
           {/* Error/Success Messages */}
           {(formError || hookError) && (
