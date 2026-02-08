@@ -153,8 +153,8 @@ export function ConsolidateToARC({ onComplete }: ConsolidateToARCProps) {
 
   if (!hasBalanceOnBaseSepolia) {
     return (
-      <div className="rounded-lg bg-zinc-50 p-4 dark:bg-zinc-800/50">
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+      <div className="rounded-lg bg-zinc-800/50 p-4">
+        <p className="text-sm text-zinc-400">
           ✅ All your USDC is already on ARC Testnet
         </p>
       </div>
@@ -163,20 +163,20 @@ export function ConsolidateToARC({ onComplete }: ConsolidateToARCProps) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 p-4 dark:from-blue-900/20 dark:to-purple-900/20">
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-white flex items-center gap-2">
+      <div className="rounded-lg bg-gradient-to-r from-blue-900/20 to-purple-900/20 p-4">
+        <h3 className="text-sm font-semibold text-white flex items-center gap-2">
           🔄 Consolidate to ARC Testnet
         </h3>
-        <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+        <p className="mt-1 text-xs text-zinc-400">
           Transfer your USDC from Base Sepolia to ARC Testnet
         </p>
 
         {/* Balance to consolidate */}
-        <div className="mt-3 flex items-center justify-between bg-white/50 dark:bg-zinc-800/50 rounded-lg px-3 py-2">
-          <span className="text-xs text-zinc-600 dark:text-zinc-400">
+        <div className="mt-3 flex items-center justify-between bg-zinc-800/50 rounded-lg px-3 py-2">
+          <span className="text-xs text-zinc-400">
             {baseSepoliaBalance?.chainIcon} Base Sepolia
           </span>
-          <span className="font-mono text-sm font-semibold text-zinc-900 dark:text-white">
+          <span className="font-mono text-sm font-semibold text-white">
             ${parseFloat(baseSepoliaBalance?.balance || "0").toFixed(2)} USDC
           </span>
         </div>
@@ -185,30 +185,30 @@ export function ConsolidateToARC({ onComplete }: ConsolidateToARCProps) {
           <span className="text-lg">↓</span>
         </div>
 
-        <div className="flex items-center justify-between bg-white/50 dark:bg-zinc-800/50 rounded-lg px-3 py-2">
-          <span className="text-xs text-zinc-600 dark:text-zinc-400">
+        <div className="flex items-center justify-between bg-zinc-800/50 rounded-lg px-3 py-2">
+          <span className="text-xs text-zinc-400">
             🔵 ARC Testnet
           </span>
-          <span className="font-mono text-sm text-zinc-600 dark:text-zinc-400">
+          <span className="font-mono text-sm text-zinc-400">
             + ${parseFloat(baseSepoliaBalance?.balance || "0").toFixed(2)} USDC
           </span>
         </div>
 
         {error && (
-          <div className="mt-3 rounded-lg bg-red-50 p-3 text-xs text-red-600 dark:bg-red-900/20 dark:text-red-400">
+          <div className="mt-3 rounded-lg bg-red-900/20 p-3 text-xs text-red-400">
             {error}
           </div>
         )}
 
         {currentStep && (
-          <div className="mt-3 rounded-lg bg-blue-50 p-3 text-xs text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 flex items-center gap-2">
+          <div className="mt-3 rounded-lg bg-blue-900/20 p-3 text-xs text-blue-400 flex items-center gap-2">
             <span className="animate-spin">⏳</span>
             {currentStep}
           </div>
         )}
 
         {success && (
-          <div className="mt-3 rounded-lg bg-green-50 p-3 text-xs text-green-600 dark:bg-green-900/20 dark:text-green-400">
+          <div className="mt-3 rounded-lg bg-green-900/20 p-3 text-xs text-green-400">
             ✅ Consolidation complete! Your USDC is now on ARC Testnet.
           </div>
         )}
@@ -225,7 +225,7 @@ export function ConsolidateToARC({ onComplete }: ConsolidateToARCProps) {
                 }
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 truncate"
+                className="block text-xs text-blue-400 truncate"
               >
                 {tx.chain}: {tx.hash.slice(0, 20)}...
               </a>
@@ -241,7 +241,7 @@ export function ConsolidateToARC({ onComplete }: ConsolidateToARCProps) {
           {isConsolidating ? "Consolidating..." : "🚀 Consolidate Now"}
         </button>
 
-        <p className="mt-2 text-center text-xs text-zinc-500 dark:text-zinc-500">
+        <p className="mt-2 text-center text-xs text-zinc-500">
           Note: This is a demo. Production would use Circle CCTP for cross-chain transfers.
         </p>
       </div>

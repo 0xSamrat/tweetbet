@@ -40,18 +40,18 @@ export function SendUSDC() {
   return (
     <div className="space-y-4">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <h2 className="text-lg font-semibold text-zinc-900 dark:text-white">
+        <h2 className="text-lg font-semibold text-white">
           {titleLabel}
         </h2>
 
         {localError && (
-          <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+          <div className="rounded-lg bg-red-900/20 p-4 text-sm text-red-400">
             {localError}
           </div>
         )}
 
         {!isGasless && (
-          <div className="rounded-lg bg-amber-50 p-3 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+          <div className="rounded-lg bg-amber-900/20 p-3 text-xs text-amber-400">
             ⚠️ MetaMask transactions require gas fees
           </div>
         )}
@@ -60,7 +60,7 @@ export function SendUSDC() {
           name="to"
           placeholder="Recipient address (0x...)"
           required
-          className="w-full rounded-lg border border-zinc-300 px-4 py-3 font-mono text-sm text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+          className="w-full rounded-lg border border-zinc-700 px-4 py-3 font-mono text-sm text-white placeholder-zinc-400 focus:border-blue-500 focus:outline-none bg-zinc-800"
         />
 
         <input
@@ -70,7 +70,7 @@ export function SendUSDC() {
           min="0"
           placeholder="Amount (USDC)"
           required
-          className="w-full rounded-lg border border-zinc-300 px-4 py-3 text-zinc-900 placeholder-zinc-400 focus:border-blue-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+          className="w-full rounded-lg border border-zinc-700 px-4 py-3 text-white placeholder-zinc-400 focus:border-blue-500 focus:outline-none bg-zinc-800"
         />
 
         <button
@@ -83,26 +83,26 @@ export function SendUSDC() {
       </form>
 
       {userOpHash && (
-        <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
-          <p className="text-sm font-medium text-blue-800 dark:text-blue-400">
+        <div className="rounded-lg bg-blue-900/20 p-4">
+          <p className="text-sm font-medium text-blue-400">
             User Op Hash:
           </p>
-          <p className="mt-1 break-all font-mono text-xs text-blue-600 dark:text-blue-500">
+          <p className="mt-1 break-all font-mono text-xs text-blue-500">
             {userOpHash}
           </p>
         </div>
       )}
 
       {txHash && (
-        <div className="rounded-lg bg-green-50 p-4 dark:bg-green-900/20">
-          <p className="text-sm font-medium text-green-800 dark:text-green-400">
+        <div className="rounded-lg bg-green-900/20 p-4">
+          <p className="text-sm font-medium text-green-400">
             ✅ Transaction Confirmed!
           </p>
           <a
             href={`https://testnet.arcscan.app/tx/${txHash}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-1 block break-all font-mono text-xs text-green-600 underline hover:text-green-800 dark:text-green-500"
+            className="mt-1 block break-all font-mono text-xs text-green-500 underline hover:text-green-300"
           >
             View on ArcScan →
           </a>

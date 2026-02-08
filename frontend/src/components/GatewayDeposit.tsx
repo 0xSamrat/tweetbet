@@ -70,17 +70,17 @@ export function GatewayDeposit({ address, onSuccess }: GatewayDepositProps) {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center gap-2">
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">
+        <h3 className="text-sm font-semibold text-white">
           Deposit to Gateway
         </h3>
-        <span className="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 text-blue-700 dark:text-blue-300 rounded-full">
+        <span className="px-2 py-0.5 text-xs font-medium bg-gradient-to-r from-blue-900/30 to-purple-900/30 text-blue-300 rounded-full">
           Unified Balance
         </span>
       </div>
 
       {/* Info Box */}
-      <div className="rounded-lg bg-blue-50 dark:bg-blue-900/20 p-3 border border-blue-200 dark:border-blue-800">
-        <p className="text-xs text-blue-700 dark:text-blue-300">
+      <div className="rounded-lg bg-blue-900/20 p-3 border border-blue-800">
+        <p className="text-xs text-blue-300">
           💡 Deposit USDC to Circle Gateway to create a unified balance. 
           Once deposited, you can instantly transfer to ARC Testnet.
         </p>
@@ -88,7 +88,7 @@ export function GatewayDeposit({ address, onSuccess }: GatewayDepositProps) {
 
       {/* Chain Selection */}
       <div>
-        <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-2">
+        <label className="block text-xs font-medium text-zinc-400 mb-2">
           Deposit From
         </label>
         <div className="grid grid-cols-2 gap-2">
@@ -101,17 +101,17 @@ export function GatewayDeposit({ address, onSuccess }: GatewayDepositProps) {
                 onClick={() => setSelectedChain(chain.id)}
                 className={`p-3 rounded-lg text-left transition-all ${
                   selectedChain === chain.id
-                    ? "bg-blue-100 dark:bg-blue-900/50 border-2 border-blue-500"
-                    : "bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-blue-300"
+                    ? "bg-blue-900/50 border-2 border-blue-500"
+                    : "bg-zinc-800 border border-zinc-700 hover:border-blue-300"
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <span className="text-lg">{chain.icon}</span>
-                  <span className="text-sm font-medium text-zinc-900 dark:text-white">
+                  <span className="text-sm font-medium text-white">
                     {chain.name}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="mt-1 text-xs text-zinc-400">
                   Available: ${parseFloat(balance?.walletBalance ?? "0").toFixed(2)}
                 </p>
               </button>
@@ -122,7 +122,7 @@ export function GatewayDeposit({ address, onSuccess }: GatewayDepositProps) {
 
       {/* Amount Input */}
       <div>
-        <label className="block text-xs font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+        <label className="block text-xs font-medium text-zinc-400 mb-1">
           Amount (USDC)
         </label>
         <div className="relative">
@@ -133,12 +133,12 @@ export function GatewayDeposit({ address, onSuccess }: GatewayDepositProps) {
             placeholder="0.00"
             min="0"
             step="0.01"
-            className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 px-3 py-2.5 pr-16 text-sm text-zinc-900 dark:text-white placeholder-zinc-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+            className="w-full rounded-lg border border-zinc-600 bg-zinc-800 px-3 py-2.5 pr-16 text-sm text-white placeholder-zinc-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
           />
           <button
             type="button"
             onClick={handleMaxClick}
-            className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 bg-blue-50 dark:bg-blue-900/30 rounded"
+            className="absolute right-2 top-1/2 -translate-y-1/2 px-2 py-1 text-xs font-medium text-blue-400 hover:text-blue-300 bg-blue-900/30 rounded"
           >
             MAX
           </button>
@@ -178,15 +178,15 @@ export function GatewayDeposit({ address, onSuccess }: GatewayDepositProps) {
 
       {/* Success Message */}
       {lastDeposit && (
-        <div className="rounded-lg bg-green-50 dark:bg-green-900/20 p-3 border border-green-200 dark:border-green-800">
-          <p className="text-xs font-medium text-green-700 dark:text-green-300">
+        <div className="rounded-lg bg-green-900/20 p-3 border border-green-800">
+          <p className="text-xs font-medium text-green-300">
             ✅ Deposited ${lastDeposit.amount} USDC to Gateway!
           </p>
           <a
             href={`${explorerUrl}/tx/${lastDeposit.depositTxHash}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-green-600 dark:text-green-400 underline mt-1 block"
+            className="text-xs text-green-400 underline mt-1 block"
           >
             View Transaction →
           </a>
@@ -195,8 +195,8 @@ export function GatewayDeposit({ address, onSuccess }: GatewayDepositProps) {
 
       {/* Error */}
       {error && (
-        <div className="rounded-lg bg-red-50 dark:bg-red-900/20 p-3 border border-red-200 dark:border-red-800">
-          <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+        <div className="rounded-lg bg-red-900/20 p-3 border border-red-800">
+          <p className="text-xs text-red-400">{error}</p>
         </div>
       )}
     </div>

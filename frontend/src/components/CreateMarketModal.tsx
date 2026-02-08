@@ -221,14 +221,14 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
       />
 
       {/* Modal */}
-      <div className="relative z-10 w-full max-w-lg mx-4 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-700 max-h-[90vh] overflow-y-auto">
+      <div className="relative z-10 w-full max-w-lg mx-4 bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-700 max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-zinc-200 dark:border-zinc-700">
+        <div className="flex items-center justify-between p-6 border-b border-zinc-700">
           <div>
-            <h2 className="text-xl font-bold text-zinc-900 dark:text-white">
+            <h2 className="text-xl font-bold text-white">
               {step === "input" ? "Create Prediction Market" : "Review & Create"}
             </h2>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+            <p className="text-sm text-zinc-400 mt-1">
               {step === "input" 
                 ? "Paste an X post and let AI generate a prediction" 
                 : "Review and customize your prediction market"}
@@ -236,7 +236,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
           </div>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
           >
             <svg className="w-5 h-5 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -249,15 +249,15 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
           {successMessage ? (
             /* Success State */
             <div className="text-center py-8">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="w-16 h-16 bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
+              <h3 className="text-lg font-semibold text-white mb-2">
                 Market Created Successfully!
               </h3>
-              <p className="text-zinc-500 dark:text-zinc-400">
+              <p className="text-zinc-400">
                 Your prediction market is now live.
               </p>
             </div>
@@ -266,7 +266,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
             <div className="space-y-6">
               {/* X Post URL Input */}
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
                   X/Twitter Post URL
                 </label>
                 <div className="relative">
@@ -280,18 +280,18 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
                     value={xPostUrl}
                     onChange={(e) => setXPostUrl(e.target.value)}
                     placeholder="https://x.com/user/status/123456789"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-zinc-700 bg-zinc-800 text-white placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
-                <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="mt-2 text-xs text-zinc-400">
                   Paste a link to any X/Twitter post. AI will generate a prediction question from it.
                 </p>
               </div>
 
               {/* Error */}
               {formError && (
-                <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100 dark:border-red-900/30">
-                  <p className="text-sm text-red-600 dark:text-red-400">{formError}</p>
+                <div className="p-3 bg-red-900/20 rounded-xl border border-red-900/30">
+                  <p className="text-sm text-red-400">{formError}</p>
                 </div>
               )}
 
@@ -322,17 +322,17 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
               {/* Divider */}
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-zinc-200 dark:border-zinc-700" />
+                  <div className="w-full border-t border-zinc-700" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white dark:bg-zinc-900 text-zinc-500">or create manually</span>
+                  <span className="px-2 bg-zinc-900 text-zinc-500">or create manually</span>
                 </div>
               </div>
 
               {/* Manual Entry Button */}
               <button
                 onClick={() => setStep("review")}
-                className="w-full py-3 px-4 rounded-xl border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                className="w-full py-3 px-4 rounded-xl border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
               >
                 Create Without AI
               </button>
@@ -342,8 +342,8 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* AI Context (if generated) */}
               {aiContext && (
-                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-900/30">
-                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                <div className="p-3 bg-blue-900/20 rounded-xl border border-blue-900/30">
+                  <p className="text-sm text-blue-300">
                     <span className="font-medium">AI Context:</span> {aiContext}
                   </p>
                 </div>
@@ -351,7 +351,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
 
               {/* Question */}
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
                   Prediction Question *
                 </label>
                 <textarea
@@ -359,7 +359,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Will [something specific] happen by [date]?"
                   rows={3}
-                  className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  className="w-full px-4 py-3 rounded-xl border border-zinc-700 bg-zinc-800 text-white placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   required
                   disabled={isLoading}
                 />
@@ -367,7 +367,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
 
               {/* X Post URL (readonly or editable) */}
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
                   X/Twitter Post (optional)
                 </label>
                 <input
@@ -375,14 +375,14 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
                   value={xPostUrl}
                   onChange={(e) => setXPostUrl(e.target.value)}
                   placeholder="https://x.com/user/status/123456789"
-                  className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-xl border border-zinc-700 bg-zinc-800 text-white placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   disabled={isLoading}
                 />
               </div>
 
               {/* Close Date */}
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
                   Market Closes *
                 </label>
                 
@@ -399,7 +399,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
                       key={opt.days}
                       type="button"
                       onClick={() => setDuration(opt.days)}
-                      className="px-3 py-1.5 text-xs font-medium rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-colors"
+                      className="px-3 py-1.5 text-xs font-medium rounded-lg border border-zinc-700 hover:bg-zinc-800 text-zinc-400 transition-colors"
                     >
                       {opt.label}
                     </button>
@@ -412,7 +412,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
                     value={closeDate}
                     onChange={(e) => setCloseDate(e.target.value)}
                     min={today}
-                    className="px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="px-4 py-3 rounded-xl border border-zinc-700 bg-zinc-800 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                     disabled={isLoading}
                   />
@@ -420,7 +420,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
                     type="time"
                     value={closeTime}
                     onChange={(e) => setCloseTime(e.target.value)}
-                    className="px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="px-4 py-3 rounded-xl border border-zinc-700 bg-zinc-800 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                     disabled={isLoading}
                   />
@@ -429,7 +429,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
 
               {/* Initial Liquidity */}
               <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                <label className="block text-sm font-medium text-zinc-300 mb-2">
                   Initial Liquidity (USDC) *
                 </label>
                 <div className="relative">
@@ -439,7 +439,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
                     min="0.01"
                     value={liquidityAmount}
                     onChange={(e) => setLiquidityAmount(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 rounded-xl border border-zinc-700 bg-zinc-800 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                     disabled={isLoading}
                   />
@@ -447,15 +447,15 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
                     <span className="text-zinc-400 text-sm">USDC</span>
                   </div>
                 </div>
-                <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                <p className="mt-2 text-xs text-zinc-400">
                   This seeds the liquidity pool. You&apos;ll receive LP tokens.
                 </p>
               </div>
 
               {/* Error */}
               {(formError || hookError) && (
-                <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100 dark:border-red-900/30">
-                  <p className="text-sm text-red-600 dark:text-red-400">{formError || hookError}</p>
+                <div className="p-3 bg-red-900/20 rounded-xl border border-red-900/30">
+                  <p className="text-sm text-red-400">{formError || hookError}</p>
                 </div>
               )}
 
@@ -464,7 +464,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
                 <button
                   type="button"
                   onClick={() => setStep("input")}
-                  className="flex-1 py-3 px-4 rounded-xl border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+                  className="flex-1 py-3 px-4 rounded-xl border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
                   disabled={isLoading}
                 >
                   Back

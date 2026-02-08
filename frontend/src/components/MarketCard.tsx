@@ -51,8 +51,8 @@ export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps)
       return (
         <span className={`px-2 py-1 rounded-full text-xs font-medium ${
           market.outcome 
-            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-            : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+            ? "bg-green-900/30 text-green-400"
+            : "bg-red-900/30 text-red-400"
         }`}>
           {market.outcome ? "YES Won" : "NO Won"}
         </span>
@@ -60,13 +60,13 @@ export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps)
     }
     if (market.isOpen) {
       return (
-        <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-900/30 text-blue-400">
           Open
         </span>
       );
     }
     return (
-      <span className="px-2 py-1 rounded-full text-xs font-medium bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
+      <span className="px-2 py-1 rounded-full text-xs font-medium bg-zinc-800 text-zinc-400">
         Closed
       </span>
     );
@@ -83,18 +83,18 @@ export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps)
   return (
     <div
       onClick={handleClick}
-      className="group relative bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-5 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-lg transition-all cursor-pointer"
+      className="group relative bg-zinc-900/80 rounded-2xl border border-zinc-800 p-5 hover:border-blue-700/60 hover:shadow-lg hover:shadow-blue-900/10 transition-all cursor-pointer backdrop-blur-sm"
     >
       {/* Header: Status + Time */}
       <div className="flex items-center justify-between mb-3">
         {getStatusBadge()}
-        <span className="text-xs text-zinc-500 dark:text-zinc-400">
+        <span className="text-xs text-zinc-400">
           {market.timeRemaining}
         </span>
       </div>
 
       {/* Question */}
-      <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+      <h3 className="text-lg font-semibold text-white mb-4 line-clamp-2 group-hover:text-blue-400 transition-colors">
         {market.description}
       </h3>
 
@@ -105,7 +105,7 @@ export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps)
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="inline-flex items-center gap-1.5 text-xs text-zinc-500 hover:text-blue-500 dark:text-zinc-400 dark:hover:text-blue-400 mb-4 transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-blue-400 mb-4 transition-colors"
         >
           <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
             <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -117,12 +117,12 @@ export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps)
       {/* Probability Display */}
       <div className="mb-4">
         <div className="flex items-center justify-between text-sm mb-2">
-          <span className="text-zinc-600 dark:text-zinc-400">Probability</span>
-          <span className="font-bold text-zinc-900 dark:text-white">
+          <span className="text-zinc-400">Probability</span>
+          <span className="font-bold text-white">
             {market.yesProbability}% YES
           </span>
         </div>
-        <div className="h-2 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+        <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
           <div
             className={`h-full ${getProbabilityColor(market.yesProbability)} transition-all`}
             style={{ width: `${market.yesProbability}%` }}
@@ -134,7 +134,7 @@ export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps)
       <div className="flex items-center justify-between text-sm">
         <div className="flex items-center gap-4">
           {/* Volume */}
-          <div className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400">
+          <div className="flex items-center gap-1.5 text-zinc-400">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
             </svg>
@@ -155,17 +155,17 @@ export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps)
 
       {/* YES/NO Buttons for quick action */}
       {market.isOpen && (
-        <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
+        <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-zinc-800">
           <button
             onClick={handleYesClick}
-            className="py-2.5 px-3 rounded-xl bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400 font-semibold text-sm transition-colors flex flex-col items-center gap-0.5"
+            className="py-2.5 px-3 rounded-xl bg-green-900/20 hover:bg-green-900/30 text-green-400 font-semibold text-sm transition-colors flex flex-col items-center gap-0.5 border border-green-800/30 glow-green"
           >
             <span>Buy Yes</span>
             <span className="text-xs opacity-75">{(market.yesProbability / 100).toFixed(2)} USDC</span>
           </button>
           <button
             onClick={handleNoClick}
-            className="py-2.5 px-3 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 font-semibold text-sm transition-colors flex flex-col items-center gap-0.5"
+            className="py-2.5 px-3 rounded-xl bg-red-900/20 hover:bg-red-900/30 text-red-400 font-semibold text-sm transition-colors flex flex-col items-center gap-0.5 border border-red-800/30 glow-red"
           >
             <span>Buy No</span>
             <span className="text-xs opacity-75">{((100 - market.yesProbability) / 100).toFixed(2)} USDC</span>
@@ -188,38 +188,38 @@ export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps)
 // Skeleton loader for market cards
 export function MarketCardSkeleton() {
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-5 animate-pulse">
+    <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5 animate-pulse">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <div className="h-6 w-16 bg-zinc-200 dark:bg-zinc-700 rounded-full" />
-        <div className="h-4 w-12 bg-zinc-200 dark:bg-zinc-700 rounded" />
+        <div className="h-6 w-16 bg-zinc-700 rounded-full" />
+        <div className="h-4 w-12 bg-zinc-700 rounded" />
       </div>
 
       {/* Question */}
       <div className="space-y-2 mb-4">
-        <div className="h-5 w-full bg-zinc-200 dark:bg-zinc-700 rounded" />
-        <div className="h-5 w-3/4 bg-zinc-200 dark:bg-zinc-700 rounded" />
+        <div className="h-5 w-full bg-zinc-700 rounded" />
+        <div className="h-5 w-3/4 bg-zinc-700 rounded" />
       </div>
 
       {/* Probability */}
       <div className="mb-4">
         <div className="flex justify-between mb-2">
-          <div className="h-4 w-20 bg-zinc-200 dark:bg-zinc-700 rounded" />
-          <div className="h-4 w-16 bg-zinc-200 dark:bg-zinc-700 rounded" />
+          <div className="h-4 w-20 bg-zinc-700 rounded" />
+          <div className="h-4 w-16 bg-zinc-700 rounded" />
         </div>
-        <div className="h-2 bg-zinc-200 dark:bg-zinc-700 rounded-full" />
+        <div className="h-2 bg-zinc-700 rounded-full" />
       </div>
 
       {/* Stats */}
       <div className="flex justify-between">
-        <div className="h-4 w-24 bg-zinc-200 dark:bg-zinc-700 rounded" />
-        <div className="h-8 w-16 bg-zinc-200 dark:bg-zinc-700 rounded-lg" />
+        <div className="h-4 w-24 bg-zinc-700 rounded" />
+        <div className="h-8 w-16 bg-zinc-700 rounded-lg" />
       </div>
 
       {/* Buttons */}
-      <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-zinc-100 dark:border-zinc-800">
-        <div className="h-10 bg-zinc-200 dark:bg-zinc-700 rounded-xl" />
-        <div className="h-10 bg-zinc-200 dark:bg-zinc-700 rounded-xl" />
+      <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-zinc-800">
+        <div className="h-10 bg-zinc-700 rounded-xl" />
+        <div className="h-10 bg-zinc-700 rounded-xl" />
       </div>
     </div>
   );

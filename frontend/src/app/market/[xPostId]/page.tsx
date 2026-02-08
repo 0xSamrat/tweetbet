@@ -213,7 +213,7 @@ export default function MarketPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+      <div className="min-h-screen bg-zinc-950">
         <Header />
         <div className="max-w-7xl mx-auto px-4 py-12">
           <div className="flex items-center justify-center h-64">
@@ -226,14 +226,14 @@ export default function MarketPage() {
 
   if (error || !market) {
     return (
-      <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+<div className="min-h-screen bg-zinc-950">
         <Header />
         <div className="max-w-7xl mx-auto px-4 py-12">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-white mb-4">
+            <h1 className="text-2xl font-bold text-white mb-4">
               Market Not Found
             </h1>
-            <p className="text-zinc-500 dark:text-zinc-400 mb-6">
+            <p className="text-zinc-400 mb-6">
               {error || "This market does not exist."}
             </p>
             <Link
@@ -249,14 +249,14 @@ export default function MarketPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+    <div className="min-h-screen bg-zinc-950">
       <Header />
       
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Back Button */}
         <Link
           href="/"
-          className="inline-flex items-center text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200 mb-6 transition-colors"
+          className="inline-flex items-center text-zinc-400 hover:text-zinc-200 mb-6 transition-colors"
         >
           <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -265,20 +265,20 @@ export default function MarketPage() {
         </Link>
 
         {/* Market Title */}
-        <h1 className="text-2xl md:text-3xl font-bold text-zinc-900 dark:text-white mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-white mb-6">
           {market.description}
         </h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Side - Price Chart */}
           <div className="lg:col-span-2">
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">
+            <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6">
+              <h2 className="text-lg font-semibold text-white mb-4">
                 Price History
               </h2>
               
               {/* Simple Chart Visualization */}
-              <div className="relative h-64 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-4">
+              <div className="relative h-64 bg-zinc-800/50 rounded-xl p-4">
                 <div className="absolute inset-4 flex items-end justify-between gap-1">
                   {priceHistory.map((point, index) => (
                     <div
@@ -306,31 +306,31 @@ export default function MarketPage() {
               <div className="flex items-center gap-6 mt-4">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-zinc-600 dark:text-zinc-400">YES Price</span>
+                  <span className="text-sm text-zinc-400">YES Price</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                  <span className="text-sm text-zinc-600 dark:text-zinc-400">NO Price</span>
+                  <span className="text-sm text-zinc-400">NO Price</span>
                 </div>
               </div>
               
               {/* Current Prices */}
               <div className="grid grid-cols-2 gap-4 mt-6">
-                <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border border-green-100 dark:border-green-900/30">
-                  <div className="text-sm text-green-600 dark:text-green-400 mb-1">YES Price</div>
-                  <div className="text-2xl font-bold text-green-700 dark:text-green-300">
+                <div className="bg-green-900/20 rounded-xl p-4 border border-green-900/30">
+                  <div className="text-sm text-green-400 mb-1">YES Price</div>
+                  <div className="text-2xl font-bold text-green-300">
                     ${yesPrice.toFixed(2)}
                   </div>
-                  <div className="text-sm text-green-600 dark:text-green-400">
+                  <div className="text-sm text-green-400">
                     {yesProbability.toFixed(1)}% chance
                   </div>
                 </div>
-                <div className="bg-red-50 dark:bg-red-900/20 rounded-xl p-4 border border-red-100 dark:border-red-900/30">
-                  <div className="text-sm text-red-600 dark:text-red-400 mb-1">NO Price</div>
-                  <div className="text-2xl font-bold text-red-700 dark:text-red-300">
+                <div className="bg-red-900/20 rounded-xl p-4 border border-red-900/30">
+                  <div className="text-sm text-red-400 mb-1">NO Price</div>
+                  <div className="text-2xl font-bold text-red-300">
                     ${noPrice.toFixed(2)}
                   </div>
-                  <div className="text-sm text-red-600 dark:text-red-400">
+                  <div className="text-sm text-red-400">
                     {noProbability.toFixed(1)}% chance
                   </div>
                 </div>
@@ -340,19 +340,19 @@ export default function MarketPage() {
 
           {/* Right Side - Trade Panel */}
           <div className="lg:col-span-1">
-            <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6 sticky top-24">
-              <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-4">
+            <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6 sticky top-24">
+              <h2 className="text-lg font-semibold text-white mb-4">
                 Trade
               </h2>
               
               {isMarketClosed ? (
                 <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-zinc-100 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
                     <svg className="w-8 h-8 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                     </svg>
                   </div>
-                  <p className="text-zinc-500 dark:text-zinc-400">
+                  <p className="text-zinc-400">
                     This market has closed
                   </p>
                 </div>
@@ -365,7 +365,7 @@ export default function MarketPage() {
                       className={`py-3 px-4 rounded-xl font-semibold transition-all ${
                         tradeType === "yes"
                           ? "bg-green-500 text-white"
-                          : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-green-50 dark:hover:bg-green-900/20"
+                          : "bg-zinc-800 text-zinc-400 hover:bg-green-900/20"
                       }`}
                     >
                       Buy YES
@@ -375,7 +375,7 @@ export default function MarketPage() {
                       className={`py-3 px-4 rounded-xl font-semibold transition-all ${
                         tradeType === "no"
                           ? "bg-red-500 text-white"
-                          : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          : "bg-zinc-800 text-zinc-400 hover:bg-red-900/20"
                       }`}
                     >
                       Buy NO
@@ -384,7 +384,7 @@ export default function MarketPage() {
                   
                   {/* Amount Input */}
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    <label className="block text-sm font-medium text-zinc-300 mb-2">
                       Amount (USDC)
                     </label>
                     <input
@@ -393,7 +393,7 @@ export default function MarketPage() {
                       min="0.01"
                       value={tradeAmount}
                       onChange={(e) => setTradeAmount(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-3 rounded-xl border border-zinc-700 bg-zinc-800 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       disabled={txLoading}
                     />
                   </div>
@@ -404,7 +404,7 @@ export default function MarketPage() {
                       <button
                         key={amount}
                         onClick={() => setTradeAmount(amount)}
-                        className="flex-1 py-2 text-sm font-medium rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-600 dark:text-zinc-400 transition-colors"
+                        className="flex-1 py-2 text-sm font-medium rounded-lg border border-zinc-700 hover:bg-zinc-800 text-zinc-400 transition-colors"
                       >
                         {amount}
                       </button>
@@ -412,22 +412,22 @@ export default function MarketPage() {
                   </div>
                   
                   {/* Trade Summary */}
-                  <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-4 mb-4">
+                  <div className="bg-zinc-800/50 rounded-xl p-4 mb-4">
                     <div className="flex justify-between text-sm mb-2">
-                      <span className="text-zinc-500 dark:text-zinc-400">You pay</span>
-                      <span className="text-zinc-900 dark:text-white font-medium">
+                      <span className="text-zinc-400">You pay</span>
+                      <span className="text-white font-medium">
                         {tradeAmount} USDC
                       </span>
                     </div>
                     <div className="flex justify-between text-sm mb-2">
-                      <span className="text-zinc-500 dark:text-zinc-400">Price per share</span>
-                      <span className="text-zinc-900 dark:text-white font-medium">
+                      <span className="text-zinc-400">Price per share</span>
+                      <span className="text-white font-medium">
                         ${tradeType === "yes" ? yesPrice.toFixed(3) : noPrice.toFixed(3)}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-zinc-500 dark:text-zinc-400">Est. shares</span>
-                      <span className="text-zinc-900 dark:text-white font-medium">
+                      <span className="text-zinc-400">Est. shares</span>
+                      <span className="text-white font-medium">
                         ~{(parseFloat(tradeAmount) / (tradeType === "yes" ? yesPrice : noPrice)).toFixed(2)}
                       </span>
                     </div>
@@ -435,13 +435,13 @@ export default function MarketPage() {
                   
                   {/* Error/Success Messages */}
                   {tradeError && (
-                    <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl border border-red-100 dark:border-red-900/30">
-                      <p className="text-sm text-red-600 dark:text-red-400">{tradeError}</p>
+                    <div className="mb-4 p-3 bg-red-900/20 rounded-xl border border-red-900/30">
+                      <p className="text-sm text-red-400">{tradeError}</p>
                     </div>
                   )}
                   {tradeSuccess && (
-                    <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-100 dark:border-green-900/30">
-                      <p className="text-sm text-green-600 dark:text-green-400">{tradeSuccess}</p>
+                    <div className="mb-4 p-3 bg-green-900/20 rounded-xl border border-green-900/30">
+                      <p className="text-sm text-green-400">{tradeSuccess}</p>
                     </div>
                   )}
                   
@@ -476,24 +476,24 @@ export default function MarketPage() {
         </div>
 
         {/* Market Info Section */}
-        <div className="mt-8 bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-white mb-6">
+        <div className="mt-8 bg-zinc-900 rounded-2xl border border-zinc-800 p-6">
+          <h2 className="text-lg font-semibold text-white mb-6">
             Market Information
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Close Time */}
             <div>
-              <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-1">Closes</div>
-              <div className="text-zinc-900 dark:text-white font-medium">
+              <div className="text-sm text-zinc-400 mb-1">Closes</div>
+              <div className="text-white font-medium">
                 {formatDate(market.closeTime)}
               </div>
             </div>
             
             {/* Initial Liquidity */}
             <div>
-              <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-1">Initial Liquidity</div>
-              <div className="text-zinc-900 dark:text-white font-medium">
+              <div className="text-sm text-zinc-400 mb-1">Initial Liquidity</div>
+              <div className="text-white font-medium">
                 {market.initialLiquidity} USDC
               </div>
             </div>
@@ -501,8 +501,8 @@ export default function MarketPage() {
             {/* Total Liquidity */}
             {poolState && (
               <div>
-                <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-1">Total Liquidity</div>
-                <div className="text-zinc-900 dark:text-white font-medium">
+                <div className="text-sm text-zinc-400 mb-1">Total Liquidity</div>
+                <div className="text-white font-medium">
                   {(Number(poolState.totalLiquidity) / 1e18).toFixed(4)} USDC
                 </div>
               </div>
@@ -511,8 +511,8 @@ export default function MarketPage() {
             {/* AMM Address */}
             {market.ammAddress && (
               <div>
-                <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-1">AMM Contract</div>
-                <div className="text-zinc-900 dark:text-white font-mono text-sm">
+                <div className="text-sm text-zinc-400 mb-1">AMM Contract</div>
+                <div className="text-white font-mono text-sm">
                   {market.ammAddress.slice(0, 6)}...{market.ammAddress.slice(-4)}
                 </div>
               </div>
@@ -520,8 +520,8 @@ export default function MarketPage() {
             
             {/* Market ID */}
             <div>
-              <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-1">Market ID</div>
-              <div className="text-zinc-900 dark:text-white font-mono text-sm" title={`#${market.marketId}`}>
+              <div className="text-sm text-zinc-400 mb-1">Market ID</div>
+              <div className="text-white font-mono text-sm" title={`#${market.marketId}`}>
                 #{market.marketId.length > 12 
                   ? `${market.marketId.slice(0, 4)}...${market.marketId.slice(-4)}`
                   : market.marketId}
@@ -530,18 +530,18 @@ export default function MarketPage() {
             
             {/* Chain */}
             <div>
-              <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-1">Chain</div>
-              <div className="text-zinc-900 dark:text-white font-medium">
-                Arc Testnet
+              <div className="text-sm text-zinc-400 mb-1">Chain</div>
+              <div className="text-white font-medium">
+                Citrea Testnet
               </div>
             </div>
           </div>
           
           {/* AI Context */}
           {market.aiContext && (
-            <div className="mt-6 pt-6 border-t border-zinc-200 dark:border-zinc-700">
-              <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">AI Context</div>
-              <p className="text-zinc-700 dark:text-zinc-300">
+            <div className="mt-6 pt-6 border-t border-zinc-700">
+              <div className="text-sm text-zinc-400 mb-2">AI Context</div>
+              <p className="text-zinc-300">
                 {market.aiContext}
               </p>
             </div>
@@ -549,11 +549,11 @@ export default function MarketPage() {
           
           {/* Tweet Content */}
           {market.tweetContent && (
-            <div className="mt-6 pt-6 border-t border-zinc-200 dark:border-zinc-700">
-              <div className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">
+            <div className="mt-6 pt-6 border-t border-zinc-700">
+              <div className="text-sm text-zinc-400 mb-2">
                 Source Tweet by @{market.tweetAuthor}
               </div>
-              <p className="text-zinc-700 dark:text-zinc-300 italic">
+              <p className="text-zinc-300 italic">
                 &ldquo;{market.tweetContent}&rdquo;
               </p>
               {market.xPostUrl && (
@@ -561,7 +561,7 @@ export default function MarketPage() {
                   href={market.xPostUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 mt-3 text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 text-sm"
+                  className="inline-flex items-center gap-2 mt-3 text-blue-400 hover:text-blue-300 text-sm"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />

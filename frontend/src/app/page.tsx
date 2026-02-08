@@ -16,7 +16,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-black">
+    <div className="min-h-screen bg-[#09090b]">
       <Header />
       
       {/* Main content with padding for fixed header */}
@@ -25,15 +25,15 @@ export default function Home() {
         {!isConnected && (
           <>
             {/* Hero Section */}
-            <div className="bg-gradient-to-b from-blue-600/5 to-transparent dark:from-blue-600/10 py-16 px-4">
+            <div className="bg-gradient-to-b from-blue-600/10 to-transparent py-16 px-4">
               <div className="max-w-4xl mx-auto text-center space-y-6">
                 <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   TweetBet
                 </h1>
-                <p className="text-xl text-zinc-600 dark:text-zinc-400 max-w-md mx-auto">
+                <p className="text-xl text-zinc-400 max-w-md mx-auto">
                   Predict outcomes from tweets with gasless transactions
                 </p>
-                <div className="flex items-center justify-center gap-4 text-sm text-zinc-500 dark:text-zinc-400">
+                <div className="flex items-center justify-center gap-4 text-sm text-zinc-400">
                   <span className="flex items-center gap-2">
                     <span className="text-green-500">✓</span> No gas fees
                   </span>
@@ -65,7 +65,7 @@ export default function Home() {
           <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
             <div className="text-center">
               <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
-              <p className="mt-4 text-zinc-600 dark:text-zinc-400">
+              <p className="mt-4 text-zinc-400">
                 Loading account...
               </p>
             </div>
@@ -108,17 +108,17 @@ function MarketsSection({ markets, isLoading, error, onRefresh, onMarketClick }:
       {/* Section Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-zinc-900 dark:text-white">
+          <h2 className="text-2xl font-bold text-white">
             Prediction Markets
           </h2>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+          <p className="text-sm text-zinc-400 mt-1">
             {markets.length} markets • {openMarkets.length} open
           </p>
         </div>
         <button
           onClick={onRefresh}
           disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-300 text-sm font-medium transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-medium transition-colors disabled:opacity-50"
         >
           <svg
             className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
@@ -139,22 +139,22 @@ function MarketsSection({ markets, isLoading, error, onRefresh, onMarketClick }:
 
       {/* Error State */}
       {error && (
-        <div className="mb-8 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+        <div className="mb-8 p-4 rounded-xl bg-red-900/20 border border-red-800">
           <div className="flex items-center gap-3">
             <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <div>
-              <p className="text-sm font-medium text-red-700 dark:text-red-400">
+              <p className="text-sm font-medium text-red-400">
                 Failed to load markets
               </p>
-              <p className="text-xs text-red-600 dark:text-red-500 mt-0.5">
+              <p className="text-xs text-red-500 mt-0.5">
                 {error}
               </p>
             </div>
             <button
               onClick={onRefresh}
-              className="ml-auto text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-medium"
+              className="ml-auto text-sm text-red-400 hover:text-red-300 font-medium"
             >
               Retry
             </button>
@@ -174,15 +174,15 @@ function MarketsSection({ markets, isLoading, error, onRefresh, onMarketClick }:
       {/* Empty State */}
       {!isLoading && markets.length === 0 && !error && (
         <div className="text-center py-16">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
             <svg className="w-8 h-8 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-2">
+          <h3 className="text-lg font-semibold text-white mb-2">
             No markets yet
           </h3>
-          <p className="text-zinc-500 dark:text-zinc-400 max-w-sm mx-auto">
+          <p className="text-zinc-400 max-w-sm mx-auto">
             Be the first to create a prediction market! Click the + button in the header to get started.
           </p>
         </div>
@@ -240,12 +240,12 @@ interface StatCardProps {
 
 function StatCard({ label, value, icon }: StatCardProps) {
   return (
-    <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4">
+    <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-4">
       <div className="flex items-center gap-3">
         <span className="text-2xl">{icon}</span>
         <div>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">{label}</p>
-          <p className="text-lg font-bold text-zinc-900 dark:text-white">{value}</p>
+          <p className="text-xs text-zinc-400">{label}</p>
+          <p className="text-lg font-bold text-white">{value}</p>
         </div>
       </div>
     </div>
