@@ -8,7 +8,7 @@ import { SendUSDC } from "@/components/SendUSDC";
 import { GatewayDeposit } from "@/components/GatewayDeposit";
 import { GatewayTransfer } from "@/components/GatewayTransfer";
 import { CreateMarketModal } from "@/components/CreateMarketModal";
-import { useEnsName } from "@/hooks/useEns";
+import { useEnsProfile } from "@/hooks/useEns";
 import { arcTestnet, baseSepolia } from "viem/chains";
 import type { SupportedChainId } from "@/hooks/useWallet";
 import type { Address } from "viem";
@@ -45,8 +45,8 @@ export function Header() {
     setShowDropdown(false);
   };
 
-  // ENS name resolution for connected address
-  const { ensName, isLoading: isLoadingEns } = useEnsName(address);
+  // ENS name and avatar resolution for connected address
+  const { ensName, avatar: ensAvatar, isLoading: isLoadingEns } = useEnsProfile(address);
 
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -83,10 +83,28 @@ export function Header() {
               <div className="relative">
                 <button
                   onClick={() => setShowDropdown(!showDropdown)}
-                  className="flex items-center gap-2 rounded-full bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-700"
+                  className="flex items-center gap-2 rounded-full bg-zinc-800 px-3 py-1.5 text-sm font-medium text-zinc-200 transition hover:bg-zinc-700"
                   title={address}
                 >
-                  <span className={ensName ? "text-blue-400 font-semibold" : ""}>
+                  {/* ENS Avatar or Fallback */}
+                  {isLoadingEns ? (
+                    <div className="w-7 h-7 rounded-full bg-zinc-700 animate-pulse" />
+                  ) : ensAvatar ? (
+                    <img
+                      src={ensAvatar}
+                      alt={ensName || "Avatar"}
+                      className="w-7 h-7 rounded-full object-cover border border-blue-500/30"
+                    />
+                  ) : (
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-zinc-600">
+                      <span className="text-xs font-bold text-zinc-300">
+                        {address.slice(2, 4).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* ENS Name or Address */}
+                  <span className={ensName ? "text-blue-400 font-semibold" : "text-zinc-300"}>
                     {isLoadingEns ? formatAddress(address) : displayName}
                   </span>
                   <svg
