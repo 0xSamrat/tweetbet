@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useMarketFactory } from "@/hooks/useMarketFactory";
+import { useToast } from "@/contexts/ToastContext";
 import { encodeXPost, parseXPostUrl } from "@/utils/xPostCodec";
 import { generatePredictionFromTweet } from "@/services/geminiService";
 import { saveMarketToDatabase } from "@/services/marketService";
@@ -16,6 +17,7 @@ interface CreateMarketModalProps {
 
 export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketModalProps) {
   const { createMarketAndSeed, isLoading, error: hookError } = useMarketFactory();
+  const { addToast, updateToast } = useToast();
   const wallet = useWallet();
   
   // Step state: "input" for X URL input, "review" for reviewing/editing
@@ -163,6 +165,13 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
       }
     }
 
+    // Show pending toast
+    const toastId = addToast({
+      type: "pending",
+      title: "Creating Market...",
+      message: `Creating prediction market with ${liquidityAmount} ETH liquidity`,
+    });
+
     try {
       // Only send question to blockchain (max 80 chars)
       const result = await createMarketAndSeed({
@@ -170,6 +179,14 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
         closeTime: closeTimestamp,
         liquidityAmount: liquidityAmount,
         xPost,
+      });
+
+      // Update toast to success with tx hash
+      updateToast(toastId, {
+        type: "success",
+        title: "Market Created!",
+        message: `Market #${result.marketId.toString().slice(0, 8)}... created successfully`,
+        txHash: result.transactionHash,
       });
 
       // After successful transaction, save both question and description to MongoDB
@@ -210,7 +227,16 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
       }, 2000);
     } catch (err) {
       console.error("Failed to create market:", err);
-      setFormError(err instanceof Error ? err.message : "Failed to create market");
+      const errorMessage = err instanceof Error ? err.message : "Failed to create market";
+      
+      // Update toast to error
+      updateToast(toastId, {
+        type: "error",
+        title: "Market Creation Failed",
+        message: errorMessage.length > 100 ? errorMessage.slice(0, 100) + "..." : errorMessage,
+      });
+      
+      setFormError(errorMessage);
     }
   };
 

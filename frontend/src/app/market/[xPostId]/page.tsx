@@ -9,6 +9,7 @@ import { AddLiquidityModal } from "@/components/AddLiquidityModal";
 import { getMarketByXPostId } from "@/services/marketService";
 import { useMarketFactory } from "@/hooks/useMarketFactory";
 import { useWallet } from "@/contexts/WalletContext";
+import { useToast } from "@/contexts/ToastContext";
 import type { MarketRecord } from "@/services/marketService";
 import Link from "next/link";
 
@@ -32,6 +33,7 @@ export default function MarketPage() {
   const xPostId = params.xPostId as string;
   
   const wallet = useWallet();
+  const { addToast, updateToast } = useToast();
   const { buyYes, buyNo, isLoading: txLoading } = useMarketFactory();
   
   const [market, setMarket] = useState<MarketRecord | null>(null);
@@ -168,23 +170,47 @@ export default function MarketPage() {
     setTradeError(null);
     setTradeSuccess(null);
     
+    // Show pending toast
+    const toastId = addToast({
+      type: "pending",
+      title: `Buying ${tradeType.toUpperCase()} tokens...`,
+      message: `Processing ${tradeAmount} USDC trade`,
+    });
+    
     try {
       const marketId = BigInt(market.marketId);
       
+      let result;
       if (tradeType === "yes") {
-        await buyYes({ marketId, amount: tradeAmount });
+        result = await buyYes({ marketId, amount: tradeAmount });
       } else {
-        await buyNo({ marketId, amount: tradeAmount });
+        result = await buyNo({ marketId, amount: tradeAmount });
       }
+      
+      // Update toast to success with tx hash
+      updateToast(toastId, {
+        type: "success",
+        title: "Trade Successful!",
+        message: `Bought ${tradeType.toUpperCase()} tokens for ${tradeAmount} USDC`,
+        txHash: result.txHash,
+      });
       
       setTradeSuccess(`Successfully bought ${tradeType.toUpperCase()} tokens!`);
       
       setTimeout(() => {
         window.location.reload();
-      }, 2000);
+      }, 3000);
     } catch (err) {
       console.error("Trade failed:", err);
       const errorMessage = err instanceof Error ? err.message : "Trade failed";
+      
+      // Update toast to error
+      updateToast(toastId, {
+        type: "error",
+        title: "Trade Failed",
+        message: errorMessage.length > 100 ? errorMessage.slice(0, 100) + "..." : errorMessage,
+      });
+      
       if (errorMessage.includes("reverted")) {
         setTradeError("Transaction failed. This could mean: 1) Market doesn't exist on-chain, 2) Wrong network, or 3) Insufficient funds.");
       } else {

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useMarketFactory } from "@/hooks/useMarketFactory";
+import { useToast } from "@/contexts/ToastContext";
 import type { MarketData } from "@/hooks/useMarkets";
 
 // Flexible market type that works with both MarketData and MarketRecord
@@ -21,6 +22,7 @@ interface AddLiquidityModalProps {
 
 export function AddLiquidityModal({ isOpen, onClose, market, onSuccess }: AddLiquidityModalProps) {
   const { addLiquidity, isLoading, error: hookError } = useMarketFactory();
+  const { addToast, updateToast } = useToast();
   
   const [amount, setAmount] = useState("5");
   const [formError, setFormError] = useState<string | null>(null);
@@ -44,6 +46,13 @@ export function AddLiquidityModal({ isOpen, onClose, market, onSuccess }: AddLiq
       return;
     }
 
+    // Show pending toast
+    const toastId = addToast({
+      type: "pending",
+      title: "Adding Liquidity...",
+      message: `Adding ${amount} USDC to the pool`,
+    });
+
     try {
       // Support both bigint and string marketId
       const marketId = typeof market.marketId === 'string' 
@@ -54,7 +63,16 @@ export function AddLiquidityModal({ isOpen, onClose, market, onSuccess }: AddLiq
         marketId,
         amount,
       });
-      setSuccessMessage(`Liquidity added! TX: ${result.txHash.slice(0, 10)}...`);
+      
+      // Update toast to success with tx hash
+      updateToast(toastId, {
+        type: "success",
+        title: "Liquidity Added!",
+        message: `Successfully added ${amount} USDC`,
+        txHash: result.txHash,
+      });
+      
+      setSuccessMessage(`Liquidity added!`);
 
       if (onSuccess) onSuccess();
       
@@ -63,7 +81,16 @@ export function AddLiquidityModal({ isOpen, onClose, market, onSuccess }: AddLiq
       }, 2000);
     } catch (err) {
       console.error("Add liquidity failed:", err);
-      setFormError(err instanceof Error ? err.message : "Failed to add liquidity");
+      const errorMessage = err instanceof Error ? err.message : "Failed to add liquidity";
+      
+      // Update toast to error
+      updateToast(toastId, {
+        type: "error",
+        title: "Add Liquidity Failed",
+        message: errorMessage.length > 100 ? errorMessage.slice(0, 100) + "..." : errorMessage,
+      });
+      
+      setFormError(errorMessage);
     }
   };
 
