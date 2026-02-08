@@ -41,11 +41,12 @@ export default function MarketPage() {
   const [error, setError] = useState<string | null>(null);
   
   // Trade form state
-  const [tradeAmount, setTradeAmount] = useState("0.1");
+  const [tradeAmount, setTradeAmount] = useState("5");
   const [tradeType, setTradeType] = useState<"yes" | "no">("yes");
   const [tradeError, setTradeError] = useState<string | null>(null);
   const [tradeSuccess, setTradeSuccess] = useState<string | null>(null);
   const [showLiquidityModal, setShowLiquidityModal] = useState(false);
+  const [isTweetExpanded, setIsTweetExpanded] = useState(false);
 
   // Fetch market data from MongoDB
   useEffect(() => {
@@ -572,7 +573,17 @@ export default function MarketPage() {
                         </svg>
                       </div>
                       <p className="text-zinc-300 text-sm leading-relaxed">
-                        &ldquo;{market.tweetContent}&rdquo;
+                        &ldquo;{market.tweetContent && market.tweetContent.length > 200 && !isTweetExpanded
+                          ? market.tweetContent.slice(0, 200)
+                          : market.tweetContent}&rdquo;
+                        {market.tweetContent && market.tweetContent.length > 200 && (
+                          <button
+                            onClick={() => setIsTweetExpanded(!isTweetExpanded)}
+                            className="ml-1 text-blue-400 hover:text-blue-300 font-medium"
+                          >
+                            {isTweetExpanded ? "show less" : "...read more"}
+                          </button>
+                        )}
                       </p>
                       {market.xPostUrl && (
                         <a
@@ -661,13 +672,13 @@ export default function MarketPage() {
                           className="w-full px-4 py-3.5 pr-16 rounded-xl border border-zinc-700 bg-zinc-800/50 text-white text-lg font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                           disabled={txLoading}
                         />
-                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 font-medium">ETH</span>
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 font-medium">USDC</span>
                       </div>
                     </div>
                     
                     {/* Quick Amounts */}
                     <div className="grid grid-cols-4 gap-2 mb-5">
-                      {["0.01", "0.05", "0.1", "0.5"].map((amount) => (
+                      {["1", "5", "10", "20"].map((amount) => (
                         <button
                           key={amount}
                           onClick={() => setTradeAmount(amount)}
@@ -686,7 +697,7 @@ export default function MarketPage() {
                     <div className="p-4 rounded-xl bg-zinc-800/30 border border-zinc-700/50 mb-5 space-y-3">
                       <div className="flex justify-between text-sm">
                         <span className="text-zinc-500">You pay</span>
-                        <span className="text-white font-medium">{tradeAmount} ETH</span>
+                        <span className="text-white font-medium">{tradeAmount} USDC</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-zinc-500">Price per share</span>
@@ -745,7 +756,7 @@ export default function MarketPage() {
                       ) : !wallet.isConnected ? (
                         "Connect Wallet to Trade"
                       ) : (
-                        `Buy ${tradeType.toUpperCase()} for ${tradeAmount} ETH`
+                        `Buy ${tradeType.toUpperCase()} for ${tradeAmount} USDC`
                       )}
                     </button>
                   </>
