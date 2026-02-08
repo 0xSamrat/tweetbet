@@ -238,7 +238,7 @@ export default function MarketPage() {
             </p>
             <Link
               href="/"
-              className="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 transition-colors"
             >
               ← Back to Markets
             </Link>
@@ -272,13 +272,13 @@ export default function MarketPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Side - Price Chart */}
           <div className="lg:col-span-2">
-            <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6">
+            <div className="bg-zinc-900 rounded-md border border-zinc-800 p-6">
               <h2 className="text-lg font-semibold text-white mb-4">
                 Price History
               </h2>
               
               {/* Simple Chart Visualization */}
-              <div className="relative h-64 bg-zinc-800/50 rounded-xl p-4">
+              <div className="relative h-64 bg-zinc-800/50 rounded-md p-4">
                 <div className="absolute inset-4 flex items-end justify-between gap-1">
                   {priceHistory.map((point, index) => (
                     <div
@@ -316,7 +316,7 @@ export default function MarketPage() {
               
               {/* Current Prices */}
               <div className="grid grid-cols-2 gap-4 mt-6">
-                <div className="bg-green-900/20 rounded-xl p-4 border border-green-900/30">
+                <div className="bg-green-900/20 rounded-md p-4 border border-green-900/30">
                   <div className="text-sm text-green-400 mb-1">YES Price</div>
                   <div className="text-2xl font-bold text-green-300">
                     ${yesPrice.toFixed(2)}
@@ -325,7 +325,7 @@ export default function MarketPage() {
                     {yesProbability.toFixed(1)}% chance
                   </div>
                 </div>
-                <div className="bg-red-900/20 rounded-xl p-4 border border-red-900/30">
+                <div className="bg-red-900/20 rounded-md p-4 border border-red-900/30">
                   <div className="text-sm text-red-400 mb-1">NO Price</div>
                   <div className="text-2xl font-bold text-red-300">
                     ${noPrice.toFixed(2)}
@@ -340,7 +340,7 @@ export default function MarketPage() {
 
           {/* Right Side - Trade Panel */}
           <div className="lg:col-span-1">
-            <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6 sticky top-24">
+            <div className="bg-zinc-900 rounded-md border border-zinc-800 p-6 sticky top-24">
               <h2 className="text-lg font-semibold text-white mb-4">
                 Trade
               </h2>
@@ -362,7 +362,7 @@ export default function MarketPage() {
                   <div className="grid grid-cols-2 gap-2 mb-4">
                     <button
                       onClick={() => setTradeType("yes")}
-                      className={`py-3 px-4 rounded-xl font-semibold transition-all ${
+                      className={`py-3 px-4 rounded-md font-semibold transition-all ${
                         tradeType === "yes"
                           ? "bg-green-500 text-white"
                           : "bg-zinc-800 text-zinc-400 hover:bg-green-900/20"
@@ -372,7 +372,7 @@ export default function MarketPage() {
                     </button>
                     <button
                       onClick={() => setTradeType("no")}
-                      className={`py-3 px-4 rounded-xl font-semibold transition-all ${
+                      className={`py-3 px-4 rounded-md font-semibold transition-all ${
                         tradeType === "no"
                           ? "bg-red-500 text-white"
                           : "bg-zinc-800 text-zinc-400 hover:bg-red-900/20"
@@ -393,7 +393,7 @@ export default function MarketPage() {
                       min="0.01"
                       value={tradeAmount}
                       onChange={(e) => setTradeAmount(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-zinc-700 bg-zinc-800 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-3 rounded-md border border-zinc-700 bg-zinc-800 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       disabled={txLoading}
                     />
                   </div>
@@ -404,7 +404,7 @@ export default function MarketPage() {
                       <button
                         key={amount}
                         onClick={() => setTradeAmount(amount)}
-                        className="flex-1 py-2 text-sm font-medium rounded-lg border border-zinc-700 hover:bg-zinc-800 text-zinc-400 transition-colors"
+                        className="flex-1 py-2 text-sm font-medium rounded-md border border-zinc-700 hover:bg-zinc-800 text-zinc-400 transition-colors"
                       >
                         {amount}
                       </button>
@@ -412,7 +412,7 @@ export default function MarketPage() {
                   </div>
                   
                   {/* Trade Summary */}
-                  <div className="bg-zinc-800/50 rounded-xl p-4 mb-4">
+                  <div className="bg-zinc-800/50 rounded-md p-4 mb-4">
                     <div className="flex justify-between text-sm mb-2">
                       <span className="text-zinc-400">You pay</span>
                       <span className="text-white font-medium">
@@ -435,12 +435,12 @@ export default function MarketPage() {
                   
                   {/* Error/Success Messages */}
                   {tradeError && (
-                    <div className="mb-4 p-3 bg-red-900/20 rounded-xl border border-red-900/30">
+                    <div className="mb-4 p-3 bg-red-900/20 rounded-md border border-red-900/30">
                       <p className="text-sm text-red-400">{tradeError}</p>
                     </div>
                   )}
                   {tradeSuccess && (
-                    <div className="mb-4 p-3 bg-green-900/20 rounded-xl border border-green-900/30">
+                    <div className="mb-4 p-3 bg-green-900/20 rounded-md border border-green-900/30">
                       <p className="text-sm text-green-400">{tradeSuccess}</p>
                     </div>
                   )}
@@ -449,7 +449,7 @@ export default function MarketPage() {
                   <button
                     onClick={handleTrade}
                     disabled={txLoading || !wallet.isConnected}
-                    className={`w-full py-4 px-6 rounded-xl font-bold text-white transition-all ${
+                    className={`w-full py-4 px-6 rounded-md font-bold text-white transition-all ${
                       tradeType === "yes"
                         ? "bg-green-500 hover:bg-green-600"
                         : "bg-red-500 hover:bg-red-600"
@@ -476,7 +476,7 @@ export default function MarketPage() {
         </div>
 
         {/* Market Info Section */}
-        <div className="mt-8 bg-zinc-900 rounded-2xl border border-zinc-800 p-6">
+        <div className="mt-8 bg-zinc-900 rounded-md border border-zinc-800 p-6">
           <h2 className="text-lg font-semibold text-white mb-6">
             Market Information
           </h2>

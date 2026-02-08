@@ -60,7 +60,7 @@ export function WalletConnect({ onSuccess }: WalletConnectProps) {
 
       <div className="p-6 space-y-5">
         {error && (
-          <div className="rounded-xl bg-red-900/20 p-4 text-sm text-red-400 border border-red-800/30">
+          <div className="rounded-md bg-red-900/20 p-4 text-sm text-red-400 border border-red-800/30">
             <div className="flex items-center gap-2">
               <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -73,7 +73,7 @@ export function WalletConnect({ onSuccess }: WalletConnectProps) {
         {/* Passkey Section */}
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg">
+            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg">
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
               </svg>
@@ -96,7 +96,7 @@ export function WalletConnect({ onSuccess }: WalletConnectProps) {
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Choose a username"
                   autoFocus
-                  className="w-full rounded-xl border-2 border-zinc-700 bg-zinc-800 px-4 py-3.5 text-white placeholder-zinc-400 transition-all focus:border-purple-400 focus:outline-none focus:ring-4 focus:ring-purple-500/10"
+                  className="w-full rounded-md border-2 border-zinc-700 bg-zinc-800 px-4 py-3.5 text-white placeholder-zinc-400 transition-all focus:border-purple-400 focus:outline-none focus:ring-4 focus:ring-purple-500/10"
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400">
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -108,14 +108,14 @@ export function WalletConnect({ onSuccess }: WalletConnectProps) {
                 <button
                   onClick={handleCancelUsername}
                   disabled={isLoading}
-                  className="flex-1 rounded-xl border-2 border-zinc-700 px-4 py-3 font-semibold text-zinc-300 transition-all hover:bg-zinc-800 hover:border-zinc-600 disabled:opacity-50"
+                  className="flex-1 rounded-md border-2 border-zinc-700 px-4 py-3 font-semibold text-zinc-300 transition-all hover:bg-zinc-800 hover:border-zinc-600 disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handlePasskeyRegister}
                   disabled={isLoading || !username.trim()}
-                  className="flex-1 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3 font-semibold text-white shadow-lg shadow-purple-500/25 transition-all hover:shadow-xl hover:shadow-purple-500/30 disabled:opacity-50 disabled:shadow-none"
+                  className="flex-1 rounded-md bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3 font-semibold text-white shadow-lg shadow-purple-500/25 transition-all hover:shadow-xl hover:shadow-purple-500/30 disabled:opacity-50 disabled:shadow-none"
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -134,7 +134,7 @@ export function WalletConnect({ onSuccess }: WalletConnectProps) {
               <button
                 onClick={handlePasskeyLogin}
                 disabled={isLoading}
-                className="group relative overflow-hidden rounded-xl border-2 border-zinc-700 px-4 py-3.5 font-semibold text-zinc-200 transition-all hover:border-blue-600 hover:bg-blue-900/20 disabled:opacity-50"
+                className="group relative overflow-hidden rounded-md border-2 border-zinc-700 px-4 py-3.5 font-semibold text-zinc-200 transition-all hover:border-blue-600 hover:bg-blue-900/20 disabled:opacity-50"
               >
                 <span className="flex items-center justify-center gap-2">
                   <svg className="h-5 w-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -146,7 +146,7 @@ export function WalletConnect({ onSuccess }: WalletConnectProps) {
               <button
                 onClick={() => setShowUsernameInput(true)}
                 disabled={isLoading}
-                className="rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3.5 font-semibold text-white shadow-lg shadow-purple-500/25 transition-all hover:shadow-xl hover:shadow-purple-500/30 disabled:opacity-50"
+                className="rounded-md bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3.5 font-semibold text-white shadow-lg shadow-purple-500/25 transition-all hover:shadow-xl hover:shadow-purple-500/30 disabled:opacity-50"
               >
                 <span className="flex items-center justify-center gap-2">
                   <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -171,9 +171,9 @@ export function WalletConnect({ onSuccess }: WalletConnectProps) {
           <button
             onClick={handleMetaMaskConnect}
             disabled={isLoading}
-            className="group w-full flex items-center gap-4 rounded-xl border-2 border-zinc-700 bg-zinc-800 px-4 py-4 transition-all hover:border-orange-600 hover:bg-orange-900/10 disabled:opacity-50"
+            className="group w-full flex items-center gap-4 rounded-md border-2 border-zinc-700 bg-zinc-800 px-4 py-4 transition-all hover:border-orange-600 hover:bg-orange-900/10 disabled:opacity-50"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 p-2 shadow-lg">
+            <div className="flex h-10 w-10 items-center justify-center rounded-md bg-gradient-to-br from-orange-400 to-orange-600 p-2 shadow-lg">
               <Image
                 src="/metamask-icon.png"
                 alt="MetaMask"

@@ -55,12 +55,12 @@ export function WalletInfo() {
   return (
     <div className="space-y-4">
       {error && (
-        <div className="rounded-lg bg-red-900/20 p-4 text-sm text-red-400">
+        <div className="rounded-md bg-red-900/20 p-4 text-sm text-red-400">
           {error}
         </div>
       )}
 
-      <div className="rounded-lg bg-green-900/20 p-4">
+      <div className="rounded-md bg-green-900/20 p-4">
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium text-green-400">
             ✅ Connected
@@ -106,7 +106,7 @@ export function WalletInfo() {
           {/* Copy Button */}
           <button
             onClick={handleCopy}
-            className="p-1.5 rounded-lg hover:bg-green-800/30 transition-colors"
+            className="p-1.5 rounded-md hover:bg-green-800/30 transition-colors"
             title={copied ? "Copied!" : "Copy address"}
           >
             {copied ? (
@@ -130,7 +130,7 @@ export function WalletInfo() {
         /* MetaMask: Show Gateway Unified Balance + Wallet Balance */
         <div className="space-y-3">
           {/* Unified Gateway Balance */}
-          <div className="rounded-xl bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 p-4 border border-blue-800">
+          <div className="rounded-md bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 p-4 border border-blue-800">
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <span className="text-lg">🌐</span>
@@ -155,7 +155,7 @@ export function WalletInfo() {
           </div>
 
           {/* Wallet Balance (Not deposited) */}
-          <div className="rounded-xl bg-zinc-800/50 p-3 border border-zinc-700">
+          <div className="rounded-md bg-zinc-800/50 p-3 border border-zinc-700">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="text-base">💳</span>
@@ -191,7 +191,7 @@ export function WalletInfo() {
               {gatewayBalance.chainBalances.map((balance) => (
                 <div
                   key={balance.chainId}
-                  className="rounded-lg bg-zinc-800 p-3 border border-zinc-700"
+                  className="rounded-md bg-zinc-800 p-3 border border-zinc-700"
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
@@ -222,7 +222,7 @@ export function WalletInfo() {
         </div>
       ) : (
         /* Passkey: Show Single Chain Balance */
-        <div className="rounded-xl bg-purple-900/20 p-4 border border-purple-800">
+        <div className="rounded-md bg-purple-900/20 p-4 border border-purple-800">
           <div className="flex items-center justify-between mb-1">
             <p className="text-sm font-medium text-purple-300">
               💰 USDC Balance

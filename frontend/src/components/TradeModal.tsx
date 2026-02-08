@@ -79,7 +79,7 @@ export function TradeModal({ isOpen, onClose, market, initialSide, onSuccess }: 
       />
 
       {/* Modal content */}
-      <div className="relative z-10 w-full max-w-md mx-4 bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-700 overflow-hidden">
+      <div className="relative z-10 w-full max-w-md mx-4 bg-zinc-900 rounded-md shadow-2xl border border-zinc-700 overflow-hidden">
         {/* Header */}
         <div className="p-5 border-b border-zinc-700">
           <div className="flex items-center justify-between">
@@ -103,11 +103,11 @@ export function TradeModal({ isOpen, onClose, market, initialSide, onSuccess }: 
 
         {/* Toggle YES/NO */}
         <div className="p-5 space-y-5">
-          <div className="grid grid-cols-2 gap-2 p-1 bg-zinc-800 rounded-xl">
+          <div className="grid grid-cols-2 gap-2 p-1 bg-zinc-800 rounded-md">
             <button
               type="button"
               onClick={() => setSide("yes")}
-              className={`py-3 rounded-lg font-semibold text-sm transition-all ${
+              className={`py-3 rounded-md font-semibold text-sm transition-all ${
                 side === "yes"
                   ? "bg-green-500 text-white shadow-md"
                   : "text-zinc-400 hover:text-white"
@@ -118,7 +118,7 @@ export function TradeModal({ isOpen, onClose, market, initialSide, onSuccess }: 
             <button
               type="button"
               onClick={() => setSide("no")}
-              className={`py-3 rounded-lg font-semibold text-sm transition-all ${
+              className={`py-3 rounded-md font-semibold text-sm transition-all ${
                 side === "no"
                   ? "bg-red-500 text-white shadow-md"
                   : "text-zinc-400 hover:text-white"
@@ -142,7 +142,7 @@ export function TradeModal({ isOpen, onClose, market, initialSide, onSuccess }: 
                   placeholder="0.01"
                   step="0.001"
                   min="0.001"
-                  className="w-full px-4 py-3 rounded-xl border border-zinc-700 bg-zinc-800 text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-medium"
+                  className="w-full px-4 py-3 rounded-md border border-zinc-700 bg-zinc-800 text-white placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg font-medium"
                   disabled={isLoading}
                 />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">
@@ -156,7 +156,7 @@ export function TradeModal({ isOpen, onClose, market, initialSide, onSuccess }: 
                     key={val}
                     type="button"
                     onClick={() => setAmount(val)}
-                    className="flex-1 py-1.5 rounded-lg text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-400 transition"
+                    className="flex-1 py-1.5 rounded-md text-xs font-medium bg-zinc-800 hover:bg-zinc-700 text-zinc-400 transition"
                   >
                     {val}
                   </button>
@@ -165,7 +165,7 @@ export function TradeModal({ isOpen, onClose, market, initialSide, onSuccess }: 
             </div>
 
             {/* Estimate */}
-            <div className="p-4 rounded-xl bg-zinc-800/50 space-y-2">
+            <div className="p-4 rounded-md bg-zinc-800/50 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-zinc-400">You pay</span>
                 <span className="font-medium text-white">{amount} USDC</span>
@@ -186,7 +186,7 @@ export function TradeModal({ isOpen, onClose, market, initialSide, onSuccess }: 
 
             {/* Error Message */}
             {(formError || hookError) && (
-              <div className="p-3 rounded-xl bg-red-900/20 border border-red-800">
+              <div className="p-3 rounded-md bg-red-900/20 border border-red-800">
                 <p className="text-sm text-red-400">
                   {formError || hookError}
                 </p>
@@ -195,7 +195,7 @@ export function TradeModal({ isOpen, onClose, market, initialSide, onSuccess }: 
 
             {/* Success Message */}
             {successMessage && (
-              <div className="p-3 rounded-xl bg-green-900/20 border border-green-800">
+              <div className="p-3 rounded-md bg-green-900/20 border border-green-800">
                 <p className="text-sm text-green-400">
                   {successMessage}
                 </p>
@@ -206,7 +206,7 @@ export function TradeModal({ isOpen, onClose, market, initialSide, onSuccess }: 
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full py-4 px-6 rounded-xl font-semibold text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
+              className={`w-full py-4 px-6 rounded-md font-semibold text-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                 side === "yes"
                   ? "bg-green-500 hover:bg-green-600 text-white"
                   : "bg-red-500 hover:bg-red-600 text-white"

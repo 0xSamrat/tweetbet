@@ -124,14 +124,14 @@ export function Header() {
                       className="fixed inset-0 z-50"
                       onClick={() => setShowDropdown(false)}
                     />
-                    <div className="absolute right-0 top-full z-[60] mt-2 w-80 sm:w-96 max-h-[80vh] overflow-y-auto rounded-2xl border border-zinc-700 bg-zinc-900 p-6 shadow-2xl">
+                    <div className="absolute right-0 top-full z-[60] mt-2 w-80 sm:w-96 max-h-[80vh] overflow-y-auto rounded-md border border-zinc-700 bg-zinc-900 p-6 shadow-2xl">
                       {/* Header with Network Switcher */}
                       <div className="flex items-center justify-between mb-4">
                         {/* Network Switcher - Left Side */}
                         <div className="relative">
                           {walletType === "passkey" ? (
                             // Passkey - fixed network, just show label
-                            <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 px-2 py-1 rounded-lg bg-zinc-800">
+                            <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 px-2 py-1 rounded-md bg-zinc-800">
                               <span>🔵</span>
                               <span>ARC Testnet</span>
                             </div>
@@ -141,7 +141,7 @@ export function Header() {
                               <button
                                 onClick={() => setShowChainDropdown(!showChainDropdown)}
                                 disabled={isLoading}
-                                className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 px-2 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition disabled:opacity-50"
+                                className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 px-2 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 transition disabled:opacity-50"
                               >
                                 <span>{chainId === arcTestnet.id ? "🔵" : "🔷"}</span>
                                 <span>{chainName || "Unknown"}</span>
@@ -161,7 +161,7 @@ export function Header() {
                                     className="fixed inset-0 z-10"
                                     onClick={() => setShowChainDropdown(false)}
                                   />
-                                  <div className="absolute left-0 top-full z-20 mt-1 w-36 rounded-lg border border-zinc-700 bg-zinc-800 shadow-lg">
+                                  <div className="absolute left-0 top-full z-20 mt-1 w-36 rounded-md border border-zinc-700 bg-zinc-800 shadow-lg">
                                     {chainOptions.map((chain) => (
                                       <button
                                         key={chain.id}
@@ -270,7 +270,7 @@ export function Header() {
                         {/* Disconnect Button */}
                         <button
                           onClick={handleDisconnect}
-                          className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-800 px-4 py-2.5 text-sm font-medium text-red-400 transition hover:bg-red-900/20"
+                          className="flex w-full items-center justify-center gap-2 rounded-md border border-red-800 px-4 py-2.5 text-sm font-medium text-red-400 transition hover:bg-red-900/20"
                         >
                           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

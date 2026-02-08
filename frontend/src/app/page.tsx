@@ -126,7 +126,7 @@ function MarketsSection({ markets, isLoading, error, onRefresh, onMarketClick }:
         <button
           onClick={onRefresh}
           disabled={isLoading}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-medium transition-colors disabled:opacity-50"
+          className="flex items-center gap-2 px-4 py-2 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-sm font-medium transition-colors disabled:opacity-50"
         >
           <svg
             className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
@@ -149,7 +149,7 @@ function MarketsSection({ markets, isLoading, error, onRefresh, onMarketClick }:
       <div className="flex gap-2 mb-6">
         <button
           onClick={() => setActiveTab("open")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
             activeTab === "open"
               ? "bg-green-600 text-white shadow-lg shadow-green-900/30"
               : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-300"
@@ -167,7 +167,7 @@ function MarketsSection({ markets, isLoading, error, onRefresh, onMarketClick }:
         </button>
         <button
           onClick={() => setActiveTab("closed")}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+          className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
             activeTab === "closed"
               ? "bg-zinc-600 text-white shadow-lg shadow-zinc-900/30"
               : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-300"
@@ -187,7 +187,7 @@ function MarketsSection({ markets, isLoading, error, onRefresh, onMarketClick }:
 
       {/* Error State */}
       {error && (
-        <div className="mb-8 p-4 rounded-xl bg-red-900/20 border border-red-800">
+        <div className="mb-8 p-4 rounded-md bg-red-900/20 border border-red-800">
           <div className="flex items-center gap-3">
             <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -290,7 +290,7 @@ interface StatCardProps {
 
 function StatCard({ label, value, icon }: StatCardProps) {
   return (
-    <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-4">
+    <div className="bg-zinc-900 rounded-md border border-zinc-800 p-4">
       <div className="flex items-center gap-3">
         <span className="text-2xl">{icon}</span>
         <div>

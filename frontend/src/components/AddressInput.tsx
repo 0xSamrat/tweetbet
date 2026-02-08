@@ -130,7 +130,7 @@ export function AddressInput({
         onChange={handleChange}
         placeholder={placeholder}
         required={required}
-        className={`w-full rounded-lg border border-zinc-700 px-4 py-3 font-mono text-sm text-white placeholder-zinc-400 focus:border-blue-500 focus:outline-none bg-zinc-800 ${className}`}
+        className={`w-full rounded-md border border-zinc-700 px-4 py-3 font-mono text-sm text-white placeholder-zinc-400 focus:border-blue-500 focus:outline-none bg-zinc-800 ${className}`}
       />
       <div className="min-h-[20px] px-1">
         {getStatusIndicator()}

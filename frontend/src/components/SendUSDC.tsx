@@ -143,13 +143,13 @@ export function SendUSDC() {
         </h2>
 
         {localError && (
-          <div className="rounded-lg bg-red-900/20 p-4 text-sm text-red-400">
+          <div className="rounded-md bg-red-900/20 p-4 text-sm text-red-400">
             {localError}
           </div>
         )}
 
         {!isGasless && (
-          <div className="rounded-lg bg-amber-900/20 p-3 text-xs text-amber-400">
+          <div className="rounded-md bg-amber-900/20 p-3 text-xs text-amber-400">
             ⚠️ MetaMask transactions require gas fees
           </div>
         )}
@@ -161,7 +161,7 @@ export function SendUSDC() {
             onChange={(e) => setRecipient(e.target.value)}
             placeholder="Address or ENS name (e.g., vitalik.eth)"
             required
-            className="w-full rounded-lg border border-zinc-700 px-4 py-3 font-mono text-sm text-white placeholder-zinc-400 focus:border-blue-500 focus:outline-none bg-zinc-800"
+            className="w-full rounded-md border border-zinc-700 px-4 py-3 font-mono text-sm text-white placeholder-zinc-400 focus:border-blue-500 focus:outline-none bg-zinc-800"
           />
           {getRecipientStatus()}
         </div>
@@ -173,20 +173,20 @@ export function SendUSDC() {
           min="0"
           placeholder="Amount (USDC)"
           required
-          className="w-full rounded-lg border border-zinc-700 px-4 py-3 text-white placeholder-zinc-400 focus:border-blue-500 focus:outline-none bg-zinc-800"
+          className="w-full rounded-md border border-zinc-700 px-4 py-3 text-white placeholder-zinc-400 focus:border-blue-500 focus:outline-none bg-zinc-800"
         />
 
         <button
           type="submit"
           disabled={isLoading || (isEnsName && !isValid)}
-          className="w-full rounded-lg bg-green-600 px-4 py-3 font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+          className="w-full rounded-md bg-green-600 px-4 py-3 font-semibold text-white hover:bg-green-700 disabled:opacity-50"
         >
           {isLoading ? "Sending..." : buttonLabel}
         </button>
       </form>
 
       {userOpHash && (
-        <div className="rounded-lg bg-blue-900/20 p-4">
+        <div className="rounded-md bg-blue-900/20 p-4">
           <p className="text-sm font-medium text-blue-400">
             User Op Hash:
           </p>
@@ -197,7 +197,7 @@ export function SendUSDC() {
       )}
 
       {txHash && (
-        <div className="rounded-lg bg-green-900/20 p-4">
+        <div className="rounded-md bg-green-900/20 p-4">
           <p className="text-sm font-medium text-green-400">
             ✅ Transaction Confirmed!
           </p>

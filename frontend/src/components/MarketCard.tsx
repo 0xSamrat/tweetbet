@@ -83,7 +83,7 @@ export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps)
   return (
     <div
       onClick={handleClick}
-      className="group relative bg-zinc-900/80 rounded-2xl border border-zinc-800 p-5 hover:border-blue-700/60 hover:shadow-lg hover:shadow-blue-900/10 transition-all cursor-pointer backdrop-blur-sm"
+      className="group relative bg-zinc-900/80 rounded-md border border-zinc-800 p-5 hover:border-blue-700/60 hover:shadow-lg hover:shadow-blue-900/10 transition-all cursor-pointer backdrop-blur-sm"
     >
       {/* Header: Status + Time */}
       <div className="flex items-center justify-between mb-3">
@@ -146,7 +146,7 @@ export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps)
         {market.isOpen && (
           <button
             onClick={handleTradeClick}
-            className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-medium hover:from-blue-700 hover:to-purple-700 transition-all"
+            className="px-4 py-1.5 rounded-md bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-medium hover:from-blue-700 hover:to-purple-700 transition-all"
           >
             Trade
           </button>
@@ -158,14 +158,14 @@ export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps)
         <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-zinc-800">
           <button
             onClick={handleYesClick}
-            className="py-2.5 px-3 rounded-xl bg-green-900/20 hover:bg-green-900/30 text-green-400 font-semibold text-sm transition-colors flex flex-col items-center gap-0.5 border border-green-800/30 glow-green"
+            className="py-2.5 px-3 rounded-md bg-green-900/20 hover:bg-green-900/30 text-green-400 font-semibold text-sm transition-colors flex flex-col items-center gap-0.5 border border-green-800/30 glow-green"
           >
             <span>Buy Yes</span>
             <span className="text-xs opacity-75">{(market.yesProbability / 100).toFixed(2)} USDC</span>
           </button>
           <button
             onClick={handleNoClick}
-            className="py-2.5 px-3 rounded-xl bg-red-900/20 hover:bg-red-900/30 text-red-400 font-semibold text-sm transition-colors flex flex-col items-center gap-0.5 border border-red-800/30 glow-red"
+            className="py-2.5 px-3 rounded-md bg-red-900/20 hover:bg-red-900/30 text-red-400 font-semibold text-sm transition-colors flex flex-col items-center gap-0.5 border border-red-800/30 glow-red"
           >
             <span>Buy No</span>
             <span className="text-xs opacity-75">{((100 - market.yesProbability) / 100).toFixed(2)} USDC</span>
@@ -188,7 +188,7 @@ export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps)
 // Skeleton loader for market cards
 export function MarketCardSkeleton() {
   return (
-    <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-5 animate-pulse">
+    <div className="bg-zinc-900 rounded-md border border-zinc-800 p-5 animate-pulse">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="h-6 w-16 bg-zinc-700 rounded-full" />
@@ -213,13 +213,13 @@ export function MarketCardSkeleton() {
       {/* Stats */}
       <div className="flex justify-between">
         <div className="h-4 w-24 bg-zinc-700 rounded" />
-        <div className="h-8 w-16 bg-zinc-700 rounded-lg" />
+        <div className="h-8 w-16 bg-zinc-700 rounded-md" />
       </div>
 
       {/* Buttons */}
       <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-zinc-800">
-        <div className="h-10 bg-zinc-700 rounded-xl" />
-        <div className="h-10 bg-zinc-700 rounded-xl" />
+        <div className="h-10 bg-zinc-700 rounded-md" />
+        <div className="h-10 bg-zinc-700 rounded-md" />
       </div>
     </div>
   );

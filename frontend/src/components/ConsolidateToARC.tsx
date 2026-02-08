@@ -153,7 +153,7 @@ export function ConsolidateToARC({ onComplete }: ConsolidateToARCProps) {
 
   if (!hasBalanceOnBaseSepolia) {
     return (
-      <div className="rounded-lg bg-zinc-800/50 p-4">
+      <div className="rounded-md bg-zinc-800/50 p-4">
         <p className="text-sm text-zinc-400">
           ✅ All your USDC is already on ARC Testnet
         </p>
@@ -163,7 +163,7 @@ export function ConsolidateToARC({ onComplete }: ConsolidateToARCProps) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg bg-gradient-to-r from-blue-900/20 to-purple-900/20 p-4">
+      <div className="rounded-md bg-gradient-to-r from-blue-900/20 to-purple-900/20 p-4">
         <h3 className="text-sm font-semibold text-white flex items-center gap-2">
           🔄 Consolidate to ARC Testnet
         </h3>
@@ -172,7 +172,7 @@ export function ConsolidateToARC({ onComplete }: ConsolidateToARCProps) {
         </p>
 
         {/* Balance to consolidate */}
-        <div className="mt-3 flex items-center justify-between bg-zinc-800/50 rounded-lg px-3 py-2">
+        <div className="mt-3 flex items-center justify-between bg-zinc-800/50 rounded-md px-3 py-2">
           <span className="text-xs text-zinc-400">
             {baseSepoliaBalance?.chainIcon} Base Sepolia
           </span>
@@ -185,7 +185,7 @@ export function ConsolidateToARC({ onComplete }: ConsolidateToARCProps) {
           <span className="text-lg">↓</span>
         </div>
 
-        <div className="flex items-center justify-between bg-zinc-800/50 rounded-lg px-3 py-2">
+        <div className="flex items-center justify-between bg-zinc-800/50 rounded-md px-3 py-2">
           <span className="text-xs text-zinc-400">
             🔵 ARC Testnet
           </span>
@@ -195,20 +195,20 @@ export function ConsolidateToARC({ onComplete }: ConsolidateToARCProps) {
         </div>
 
         {error && (
-          <div className="mt-3 rounded-lg bg-red-900/20 p-3 text-xs text-red-400">
+          <div className="mt-3 rounded-md bg-red-900/20 p-3 text-xs text-red-400">
             {error}
           </div>
         )}
 
         {currentStep && (
-          <div className="mt-3 rounded-lg bg-blue-900/20 p-3 text-xs text-blue-400 flex items-center gap-2">
+          <div className="mt-3 rounded-md bg-blue-900/20 p-3 text-xs text-blue-400 flex items-center gap-2">
             <span className="animate-spin">⏳</span>
             {currentStep}
           </div>
         )}
 
         {success && (
-          <div className="mt-3 rounded-lg bg-green-900/20 p-3 text-xs text-green-400">
+          <div className="mt-3 rounded-md bg-green-900/20 p-3 text-xs text-green-400">
             ✅ Consolidation complete! Your USDC is now on ARC Testnet.
           </div>
         )}
@@ -236,7 +236,7 @@ export function ConsolidateToARC({ onComplete }: ConsolidateToARCProps) {
         <button
           onClick={handleConsolidate}
           disabled={isConsolidating}
-          className="mt-4 w-full rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3 font-semibold text-white hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 transition-all"
+          className="mt-4 w-full rounded-md bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-3 font-semibold text-white hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 transition-all"
         >
           {isConsolidating ? "Consolidating..." : "🚀 Consolidate Now"}
         </button>

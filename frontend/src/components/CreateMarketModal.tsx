@@ -221,7 +221,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
       />
 
       {/* Modal */}
-      <div className="relative z-10 w-full max-w-lg mx-4 bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-700 max-h-[90vh] overflow-y-auto">
+      <div className="relative z-10 w-full max-w-lg mx-4 bg-zinc-900 rounded-md shadow-2xl border border-zinc-700 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-zinc-700">
           <div>
@@ -236,7 +236,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
           </div>
           <button
             onClick={handleClose}
-            className="p-2 hover:bg-zinc-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-zinc-800 rounded-md transition-colors"
           >
             <svg className="w-5 h-5 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -280,7 +280,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
                     value={xPostUrl}
                     onChange={(e) => setXPostUrl(e.target.value)}
                     placeholder="https://x.com/user/status/123456789"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-zinc-700 bg-zinc-800 text-white placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 rounded-md border border-zinc-700 bg-zinc-800 text-white placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <p className="mt-2 text-xs text-zinc-400">
@@ -290,7 +290,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
 
               {/* Error */}
               {formError && (
-                <div className="p-3 bg-red-900/20 rounded-xl border border-red-900/30">
+                <div className="p-3 bg-red-900/20 rounded-md border border-red-900/30">
                   <p className="text-sm text-red-400">{formError}</p>
                 </div>
               )}
@@ -299,7 +299,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
               <button
                 onClick={handleGeneratePrediction}
                 disabled={!xPostUrl || isGenerating}
-                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 rounded-md bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
               >
                 {isGenerating ? (
                   <>
@@ -332,7 +332,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
               {/* Manual Entry Button */}
               <button
                 onClick={() => setStep("review")}
-                className="w-full py-3 px-4 rounded-xl border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
+                className="w-full py-3 px-4 rounded-md border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
               >
                 Create Without AI
               </button>
@@ -342,7 +342,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* AI Context (if generated) */}
               {aiContext && (
-                <div className="p-3 bg-blue-900/20 rounded-xl border border-blue-900/30">
+                <div className="p-3 bg-blue-900/20 rounded-md border border-blue-900/30">
                   <p className="text-sm text-blue-300">
                     <span className="font-medium">AI Context:</span> {aiContext}
                   </p>
@@ -359,7 +359,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Will [something specific] happen by [date]?"
                   rows={3}
-                  className="w-full px-4 py-3 rounded-xl border border-zinc-700 bg-zinc-800 text-white placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  className="w-full px-4 py-3 rounded-md border border-zinc-700 bg-zinc-800 text-white placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   required
                   disabled={isLoading}
                 />
@@ -375,7 +375,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
                   value={xPostUrl}
                   onChange={(e) => setXPostUrl(e.target.value)}
                   placeholder="https://x.com/user/status/123456789"
-                  className="w-full px-4 py-3 rounded-xl border border-zinc-700 bg-zinc-800 text-white placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 rounded-md border border-zinc-700 bg-zinc-800 text-white placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   disabled={isLoading}
                 />
               </div>
@@ -399,7 +399,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
                       key={opt.days}
                       type="button"
                       onClick={() => setDuration(opt.days)}
-                      className="px-3 py-1.5 text-xs font-medium rounded-lg border border-zinc-700 hover:bg-zinc-800 text-zinc-400 transition-colors"
+                      className="px-3 py-1.5 text-xs font-medium rounded-md border border-zinc-700 hover:bg-zinc-800 text-zinc-400 transition-colors"
                     >
                       {opt.label}
                     </button>
@@ -412,7 +412,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
                     value={closeDate}
                     onChange={(e) => setCloseDate(e.target.value)}
                     min={today}
-                    className="px-4 py-3 rounded-xl border border-zinc-700 bg-zinc-800 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="px-4 py-3 rounded-md border border-zinc-700 bg-zinc-800 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                     disabled={isLoading}
                   />
@@ -420,7 +420,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
                     type="time"
                     value={closeTime}
                     onChange={(e) => setCloseTime(e.target.value)}
-                    className="px-4 py-3 rounded-xl border border-zinc-700 bg-zinc-800 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="px-4 py-3 rounded-md border border-zinc-700 bg-zinc-800 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                     disabled={isLoading}
                   />
@@ -439,7 +439,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
                     min="0.01"
                     value={liquidityAmount}
                     onChange={(e) => setLiquidityAmount(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-zinc-700 bg-zinc-800 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 rounded-md border border-zinc-700 bg-zinc-800 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                     disabled={isLoading}
                   />
@@ -454,7 +454,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
 
               {/* Error */}
               {(formError || hookError) && (
-                <div className="p-3 bg-red-900/20 rounded-xl border border-red-900/30">
+                <div className="p-3 bg-red-900/20 rounded-md border border-red-900/30">
                   <p className="text-sm text-red-400">{formError || hookError}</p>
                 </div>
               )}
@@ -464,7 +464,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
                 <button
                   type="button"
                   onClick={() => setStep("input")}
-                  className="flex-1 py-3 px-4 rounded-xl border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
+                  className="flex-1 py-3 px-4 rounded-md border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
                   disabled={isLoading}
                 >
                   Back
@@ -472,7 +472,7 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                  className="flex-1 py-3 px-4 rounded-md bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
                     <>
