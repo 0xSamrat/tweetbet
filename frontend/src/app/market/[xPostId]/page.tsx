@@ -265,9 +265,14 @@ export default function MarketPage() {
         </Link>
 
         {/* Market Title */}
-        <h1 className="text-2xl md:text-3xl font-bold text-white mb-6">
-          {market.description}
+        <h1 className="text-2xl md:text-3xl font-bold text-white mb-4">
+          {market.question}
         </h1>
+        
+        {/* Market Description (if available) */}
+        {market.description && (
+          <p className="text-zinc-400 text-sm mb-6">{market.description}</p>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Side - Price Chart */}
@@ -536,16 +541,6 @@ export default function MarketPage() {
               </div>
             </div>
           </div>
-          
-          {/* AI Context */}
-          {market.aiContext && (
-            <div className="mt-6 pt-6 border-t border-zinc-700">
-              <div className="text-sm text-zinc-400 mb-2">AI Context</div>
-              <p className="text-zinc-300">
-                {market.aiContext}
-              </p>
-            </div>
-          )}
           
           {/* Tweet Content */}
           {market.tweetContent && (

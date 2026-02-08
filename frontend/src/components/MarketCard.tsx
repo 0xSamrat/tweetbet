@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { MarketData } from "@/hooks/useMarkets";
 import { TradeModal } from "@/components/TradeModal";
+import { AddLiquidityModal } from "@/components/AddLiquidityModal";
 
 interface MarketCardProps {
   market: MarketData;
@@ -14,6 +15,7 @@ interface MarketCardProps {
 export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps) {
   const router = useRouter();
   const [showTradeModal, setShowTradeModal] = useState(false);
+  const [showLiquidityModal, setShowLiquidityModal] = useState(false);
   const [tradeSide, setTradeSide] = useState<"yes" | "no">("yes");
 
   const handleClick = () => {
@@ -39,10 +41,9 @@ export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps)
     setShowTradeModal(true);
   };
 
-  const handleTradeClick = (e: React.MouseEvent) => {
+  const handleAddLiquidityClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setTradeSide("yes");
-    setShowTradeModal(true);
+    setShowLiquidityModal(true);
   };
 
   // Status badge
@@ -82,8 +83,7 @@ export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps)
 
   return (
     <div
-      onClick={handleClick}
-      className="group relative bg-zinc-900/80 rounded-md border border-zinc-800 p-5 hover:border-blue-700/60 hover:shadow-lg hover:shadow-blue-900/10 transition-all cursor-pointer backdrop-blur-sm"
+      className="group relative bg-zinc-900/80 rounded-md border border-zinc-800 p-5 hover:border-blue-700/60 hover:shadow-lg hover:shadow-blue-900/10 transition-all backdrop-blur-sm"
     >
       {/* Header: Status + Time */}
       <div className="flex items-center justify-between mb-3">
@@ -93,9 +93,12 @@ export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps)
         </span>
       </div>
 
-      {/* Question */}
-      <h3 className="text-lg font-semibold text-white mb-4 line-clamp-2 group-hover:text-blue-400 transition-colors">
-        {market.description}
+      {/* Question - Clickable to navigate to market page */}
+      <h3 
+        onClick={handleClick}
+        className="text-lg font-semibold text-white mb-4 line-clamp-2 hover:text-blue-400 transition-colors cursor-pointer"
+      >
+        {market.question}
       </h3>
 
       {/* X Post Link */}
@@ -142,13 +145,16 @@ export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps)
           </div>
         </div>
 
-        {/* Trade Button */}
+        {/* Add Liquidity Button */}
         {market.isOpen && (
           <button
-            onClick={handleTradeClick}
-            className="px-4 py-1.5 rounded-md bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs font-medium hover:from-blue-700 hover:to-purple-700 transition-all"
+            onClick={handleAddLiquidityClick}
+            className="px-4 py-1.5 rounded-md bg-gradient-to-r from-purple-600 to-blue-600 text-white text-xs font-medium hover:from-purple-700 hover:to-blue-700 transition-all flex items-center gap-1.5"
           >
-            Trade
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Add Liquidity
           </button>
         )}
       </div>
@@ -179,6 +185,14 @@ export function MarketCard({ market, onClick, onTradeSuccess }: MarketCardProps)
         onClose={() => setShowTradeModal(false)}
         market={market}
         initialSide={tradeSide}
+        onSuccess={onTradeSuccess}
+      />
+
+      {/* Add Liquidity Modal */}
+      <AddLiquidityModal
+        isOpen={showLiquidityModal}
+        onClose={() => setShowLiquidityModal(false)}
+        market={market}
         onSuccess={onTradeSuccess}
       />
     </div>

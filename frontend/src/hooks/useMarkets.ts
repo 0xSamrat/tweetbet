@@ -13,7 +13,7 @@ import { decodeXPost } from "@/utils/xPostCodec";
 export interface MarketData {
   marketId: bigint;
   noId: bigint;
-  description: string;
+  question: string; // Short question from blockchain (max 80 chars)
   resolver: string;
   collateral: string;
   isResolved: boolean;
@@ -240,7 +240,7 @@ export function useMarkets(chainId: number = arcTestnet.id): UseMarketsReturn {
           return {
             marketId,
             noId: getNoId(marketId),
-            description: descs[i],
+            question: descs[i],
             resolver: resolvers[i],
             collateral: collaterals[i],
             isResolved: resolved,

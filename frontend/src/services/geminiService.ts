@@ -8,7 +8,7 @@ const openai = new OpenAI({
 
 export interface GeneratedPrediction {
   question: string;
-  context: string;
+  description: string; // Detailed context for database storage
   suggestedCloseTime: string; // e.g., "7 days", "30 days", "1 day"
   // Include scraped tweet data for MongoDB storage
   tweetContent?: string;
@@ -164,17 +164,24 @@ Based on this tweet, generate a prediction market question. The question must:
 3. Have a specific, measurable outcome
 4. Be time-bound (include when it should be resolved)
 5. Relate directly to the content or implications of this tweet
-6. The question MUST be 50 characters or fewer (including spaces and punctuation). Do not exceed 50 characters.
+6. CRITICAL: The question MUST be 80 characters or fewer (including spaces and punctuation). Do not exceed 80 characters.
+
+Example question formats (all under 80 chars):
+- "Will BTC reach $100K in next 7 days?"
+- "Will Elon announce new product this week?"
+- "Will ETH flip BTC market cap by 2026?"
 
 Respond in this exact JSON format only, no markdown:
 {
-  "question": "Will [specific prediction question]?", // 50 characters max
-  "context": "Brief context explaining what this prediction is about and how it relates to the tweet",
+  "question": "Will [specific prediction]?",
+  "description": "Detailed context explaining what this prediction is about, how it relates to the tweet, what would make it resolve YES or NO, and any relevant background information. This can be 2-3 sentences.",
   "suggestedCloseTime": "7 days"
 }
 
-The suggestedCloseTime should be one of: "1 day", "3 days", "7 days", "14 days", "30 days", "90 days"
-Choose the time based on when the event in the tweet is likely to be resolved.
+IMPORTANT:
+- "question" must be 80 characters max - this goes on blockchain
+- "description" should be detailed context (100-300 chars) - this is stored in database only
+- The suggestedCloseTime should be one of: "1 day", "3 days", "7 days", "14 days", "30 days", "90 days"
 
 Only respond with the JSON, nothing else.`;
 
@@ -200,10 +207,16 @@ Only respond with the JSON, nothing else.`;
 
     const parsed = JSON.parse(jsonMatch[0]);
     
+    // Validate question length
+    const question = parsed.question || "";
+    if (question.length > 80) {
+      console.warn(`Question exceeds 80 chars (${question.length}), truncating...`);
+    }
+    
     // Return with scraped tweet data included
     return {
-      question: parsed.question,
-      context: parsed.context,
+      question: question.slice(0, 80), // Ensure max 80 chars
+      description: parsed.description || parsed.context || "", // Support both field names
       suggestedCloseTime: parsed.suggestedCloseTime,
       tweetContent: tweetContent.text,
       tweetAuthor: tweetContent.author,

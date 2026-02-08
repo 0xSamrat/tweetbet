@@ -10,13 +10,13 @@ export interface MarketRecord {
   creatorAddress: string;
   
   // Market details
-  description: string;
+  question: string; // Short question (max 80 chars) - stored on blockchain
   closeTime: number; // Unix timestamp
   xPostUrl?: string;
   xPostId?: string;
   
-  // AI-generated context
-  aiContext?: string;
+  // AI-generated context (stored in database only, not on blockchain)
+  description?: string; // Detailed context from AI
   aiSuggestedCloseTime?: string;
   
   // Scraped tweet data

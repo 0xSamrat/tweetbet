@@ -79,6 +79,26 @@ export interface BuyResult {
   sharesOut: bigint;
 }
 
+export interface AddLiquidityParams {
+  /** Market ID */
+  marketId: bigint;
+  /** Amount of collateral (ETH) to add (as string, e.g., "0.1") */
+  amount: string;
+  /** Pool fee in basis points (default 30 = 0.3%) */
+  feeBps?: bigint;
+  /** Minimum liquidity tokens to receive (slippage protection, default 0) */
+  minLiquidity?: bigint;
+}
+
+export interface AddLiquidityResult {
+  /** Transaction hash */
+  txHash: Hex;
+  /** Transaction receipt */
+  receipt: TransactionReceipt;
+  /** Amount of LP tokens received */
+  liquidity: bigint;
+}
+
 export interface UseMarketFactoryState {
   isLoading: boolean;
   error: string | null;
@@ -92,6 +112,8 @@ export interface UseMarketFactoryActions {
   buyYes: (params: BuyParams) => Promise<BuyResult>;
   /** Buy NO shares with ETH */
   buyNo: (params: BuyParams) => Promise<BuyResult>;
+  /** Add liquidity to an existing market */
+  addLiquidity: (params: AddLiquidityParams) => Promise<AddLiquidityResult>;
   /** Clear any error */
   clearError: () => void;
 }
@@ -698,6 +720,162 @@ export function useMarketFactory(): UseMarketFactoryReturn {
     [wallet]
   );
 
+  /**
+   * Add liquidity to an existing market (split collateral + add LP)
+   */
+  const addLiquidity = React.useCallback(
+    async (params: AddLiquidityParams): Promise<AddLiquidityResult> => {
+      if (!MARKET_FACTORY_ADDRESS) {
+        throw new Error("MARKET_FACTORY_ADDRESS not configured");
+      }
+
+      if (!wallet.isConnected || !wallet.address) {
+        throw new Error("No wallet connected. Please connect a wallet first.");
+      }
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const account = wallet.address;
+        const {
+          marketId,
+          amount,
+          feeBps = BigInt(30),
+          minLiquidity = BigInt(0),
+        } = params;
+
+        const ethValue = parseEther(amount);
+        const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600);
+
+        console.log("Adding liquidity:", {
+          marketId: marketId.toString(),
+          amount,
+          feeBps: feeBps.toString(),
+          walletType: wallet.walletType,
+        });
+
+        let txHash: Hex;
+        let receipt: TransactionReceipt;
+
+        if (wallet.walletType === "passkey") {
+          // Use passkey wallet (account abstraction)
+          const passkeyAccount = wallet.passkeyWallet.account;
+          if (!passkeyAccount) {
+            throw new Error("Passkey account not ready");
+          }
+
+          // Encode the function call
+          const callData = encodeFunctionData({
+            abi: marketFactoryAbi,
+            functionName: "splitAndAddLiquidity",
+            args: [
+              marketId,
+              BigInt(0), // collateralIn (0 = use msg.value for ETH)
+              feeBps, // feeOrHook
+              BigInt(0), // amount0Min
+              BigInt(0), // amount1Min
+              minLiquidity, // minLiquidity
+              account, // to
+              deadline,
+            ],
+          });
+
+          // Send via bundler
+          const userOpHash = await bundlerClient.sendUserOperation({
+            account: passkeyAccount,
+            calls: [
+              {
+                to: MARKET_FACTORY_ADDRESS,
+                data: callData,
+                value: ethValue,
+              },
+            ],
+          });
+
+          console.log("Add liquidity userOp sent:", userOpHash);
+
+          // Wait for user operation receipt
+          const userOpReceipt =
+            await bundlerClient.waitForUserOperationReceipt({
+              hash: userOpHash,
+            });
+
+          txHash = userOpReceipt.receipt.transactionHash;
+          receipt = userOpReceipt.receipt as TransactionReceipt;
+        } else {
+          // Use MetaMask wallet
+          if (typeof window === "undefined" || !window.ethereum) {
+            throw new Error("MetaMask not found. Please install MetaMask.");
+          }
+
+          const walletClient = createWalletClient({
+            transport: custom(window.ethereum),
+          });
+
+          const chainIdHex = await window.ethereum.request({
+            method: "eth_chainId",
+          });
+          const chainId = parseInt(chainIdHex as string, 16) as SupportedChainId;
+
+          const chain = SUPPORTED_CHAINS[chainId];
+          if (!chain) {
+            throw new Error(`Unsupported chain (${chainId}).`);
+          }
+
+          txHash = await walletClient.writeContract({
+            address: MARKET_FACTORY_ADDRESS,
+            abi: marketFactoryAbi,
+            functionName: "splitAndAddLiquidity",
+            args: [
+              marketId,
+              BigInt(0), // collateralIn (0 = use msg.value for ETH)
+              feeBps, // feeOrHook
+              BigInt(0), // amount0Min
+              BigInt(0), // amount1Min
+              minLiquidity, // minLiquidity
+              account, // to
+              deadline,
+            ],
+            value: ethValue,
+            account,
+            chain,
+          });
+
+          console.log("Add liquidity tx sent:", txHash);
+
+          const publicClient = createPublicClient({
+            chain,
+            transport: http(),
+          });
+
+          receipt = await publicClient.waitForTransactionReceipt({
+            hash: txHash,
+          });
+        }
+
+        setLastTxHash(txHash);
+
+        if (receipt.status === "reverted") {
+          throw new Error("Transaction reverted");
+        }
+
+        // Estimate liquidity from the transaction (proper parsing would decode LiquidityAdded event)
+        const liquidity = ethValue;
+
+        return { txHash, receipt, liquidity };
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Unknown error";
+        console.error("addLiquidity error:", err);
+        setError(message);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [wallet]
+  );
+
   return {
     isLoading,
     error,
@@ -705,6 +883,7 @@ export function useMarketFactory(): UseMarketFactoryReturn {
     createMarketAndSeed,
     buyYes,
     buyNo,
+    addLiquidity,
     clearError,
   };
 }

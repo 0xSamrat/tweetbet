@@ -97,7 +97,7 @@ export function TradeModal({ isOpen, onClose, market, initialSide, onSuccess }: 
           </div>
           {/* Market Question */}
           <p className="mt-2 text-sm text-zinc-400 line-clamp-2">
-            {market.description}
+            {market.question}
           </p>
         </div>
 

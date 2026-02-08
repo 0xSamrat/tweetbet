@@ -23,8 +23,8 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
   
   // Form state
   const [xPostUrl, setXPostUrl] = useState("");
-  const [description, setDescription] = useState("");
-  const [aiContext, setAiContext] = useState("");
+  const [question, setQuestion] = useState(""); // Max 80 chars - goes to blockchain
+  const [aiDescription, setAiDescription] = useState(""); // Context - goes to database only
   const [aiSuggestedCloseTime, setAiSuggestedCloseTime] = useState("");
   const [closeDate, setCloseDate] = useState("");
   const [closeTime, setCloseTime] = useState("23:59");
@@ -44,8 +44,8 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
     if (!isOpen) {
       setStep("input");
       setXPostUrl("");
-      setDescription("");
-      setAiContext("");
+      setQuestion("");
+      setAiDescription("");
       setAiSuggestedCloseTime("");
       setCloseDate("");
       setCloseTime("23:59");
@@ -96,8 +96,8 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
 
     try {
       const result = await generatePredictionFromTweet(xPostUrl);
-      setDescription(result.question);
-      setAiContext(result.context);
+      setQuestion(result.question);
+      setAiDescription(result.description);
       setAiSuggestedCloseTime(result.suggestedCloseTime);
       applyCloseTimeSuggestion(result.suggestedCloseTime);
       // Store scraped tweet data if available
@@ -125,8 +125,13 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
     setSuccessMessage(null);
 
     // Validation
-    if (!description.trim()) {
+    if (!question.trim()) {
       setFormError("Market question is required");
+      return;
+    }
+
+    if (question.trim().length > 80) {
+      setFormError("Question must be 80 characters or less");
       return;
     }
 
@@ -159,26 +164,27 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
     }
 
     try {
+      // Only send question to blockchain (max 80 chars)
       const result = await createMarketAndSeed({
-        description: description.trim(),
+        description: question.trim(), // This is the short question for blockchain
         closeTime: closeTimestamp,
         liquidityAmount: liquidityAmount,
         xPost,
       });
 
-      // Save market data to MongoDB
+      // After successful transaction, save both question and description to MongoDB
       try {
         const parsed = xPostUrl.trim() && isValidXUrl(xPostUrl) ? parseXPostUrl(xPostUrl.trim()) : null;
         console.log("Saving to MongoDB with marketId:", result.marketId.toString());
         await saveMarketToDatabase({
           marketId: result.marketId.toString(),
-          ammAddress: "", // PredictionAMM is a single contract, fetched from MarketFactory.PredictionAMM()
+          ammAddress: "",
           creatorAddress: wallet.address || "",
-          description: description.trim(),
+          question: question.trim(), // Short question (max 80 chars)
+          description: aiDescription || undefined, // Detailed context from AI
           closeTime: Number(closeTimestamp),
           xPostUrl: xPostUrl.trim() || undefined,
           xPostId: parsed?.postId?.toString() || undefined,
-          aiContext: aiContext || undefined,
           aiSuggestedCloseTime: aiSuggestedCloseTime || undefined,
           tweetContent: tweetContent || undefined,
           tweetAuthor: tweetAuthor || undefined,
@@ -322,30 +328,44 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
           ) : (
             /* Step 2: Review & Customize */
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* AI Context (if generated) */}
-              {aiContext && (
-                <div className="p-3 bg-blue-900/20 rounded-md border border-blue-900/30">
-                  <p className="text-sm text-blue-300">
-                    <span className="font-medium">AI Context:</span> {aiContext}
-                  </p>
-                </div>
-              )}
-
-              {/* Question */}
+              {/* Prediction Question (max 80 chars - stored on blockchain) */}
               <div>
                 <label className="block text-sm font-medium text-zinc-300 mb-2">
-                  Prediction Question *
+                  Prediction Question 
                 </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Will [something specific] happen by [date]?"
-                  rows={3}
-                  className="w-full px-4 py-3 rounded-md border border-zinc-700 bg-zinc-800 text-white placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                  required
-                  disabled={isLoading}
-                />
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={question}
+                    onChange={(e) => setQuestion(e.target.value.slice(0, 80))}
+                    placeholder="Will [something specific] happen by [date]?"
+                    className={`w-full px-4 py-3 rounded-md border ${
+                      question.length > 80 ? 'border-red-500' : 'border-zinc-700'
+                    } bg-zinc-800 text-white placeholder-zinc-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                    required
+                    disabled={isLoading}
+                    maxLength={80}
+                  />
+                  <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs ${
+                    question.length >= 70 ? (question.length >= 80 ? 'text-red-400' : 'text-yellow-400') : 'text-zinc-500'
+                  }`}>
+                    {question.length}/80
+                  </span>
+                </div>
               </div>
+
+              {/* AI Description (context for database - not stored on blockchain) */}
+              {aiDescription && (
+                <div className="p-3 bg-blue-900/20 rounded-md border border-blue-900/30">
+                  <p className="text-xs font-medium text-blue-400 mb-1.5 flex items-center gap-1.5">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Context (stored in database, not on blockchain)
+                  </p>
+                  <p className="text-sm text-blue-300">{aiDescription}</p>
+                </div>
+              )}
 
               {/* X Post URL (readonly or editable) */}
               <div>
