@@ -791,6 +791,9 @@ export function useMarketFactory(): UseMarketFactoryReturn {
                 value: ethValue,
               },
             ],
+            paymaster: true,
+            maxPriorityFeePerGas: parseGwei("1"),
+            maxFeePerGas: parseGwei("50"),
           });
 
           console.log("Add liquidity userOp sent:", userOpHash);

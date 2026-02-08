@@ -22,12 +22,12 @@ interface AddLiquidityModalProps {
 export function AddLiquidityModal({ isOpen, onClose, market, onSuccess }: AddLiquidityModalProps) {
   const { addLiquidity, isLoading, error: hookError } = useMarketFactory();
   
-  const [amount, setAmount] = useState("0.01");
+  const [amount, setAmount] = useState("5");
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleClose = () => {
-    setAmount("0.01");
+    setAmount("5");
     setFormError(null);
     setSuccessMessage(null);
     onClose();
@@ -116,34 +116,34 @@ export function AddLiquidityModal({ isOpen, onClose, market, onSuccess }: AddLiq
           {/* Amount Input */}
           <div>
             <label className="block text-sm font-medium text-zinc-300 mb-2">
-              Amount (ETH)
+              Amount (USDC)
             </label>
             <div className="relative">
               <input
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                step="0.001"
-                min="0.001"
-                placeholder="0.01"
+                step="0.01"
+                min="1"
+                placeholder="5"
                 className="w-full px-4 py-3 pr-16 rounded-md border border-zinc-700 bg-zinc-800 text-white placeholder-zinc-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                 disabled={isLoading}
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 text-sm">
-                ETH
+                USDC
               </span>
             </div>
             
             {/* Quick Amount Buttons */}
             <div className="flex gap-2 mt-2">
-              {["0.01", "0.05", "0.1", "0.5"].map((val) => (
+              {["1", "5", "10", "20"].map((val) => (
                 <button
                   key={val}
                   type="button"
                   onClick={() => setAmount(val)}
                   className="flex-1 py-1.5 text-xs font-medium rounded-md border border-zinc-700 hover:bg-zinc-800 text-zinc-400 transition-colors"
                 >
-                  {val} ETH
+                  {val} USDC
                 </button>
               ))}
             </div>
@@ -161,7 +161,7 @@ export function AddLiquidityModal({ isOpen, onClose, market, onSuccess }: AddLiq
               {market.totalVolume !== undefined && (
                 <div className="flex justify-between text-sm">
                   <span className="text-zinc-400">Pool Volume</span>
-                  <span className="text-white font-medium">{parseFloat(market.totalVolume).toFixed(4)} ETH</span>
+                  <span className="text-white font-medium">{parseFloat(market.totalVolume).toFixed(4)} USDC</span>
                 </div>
               )}
             </div>
