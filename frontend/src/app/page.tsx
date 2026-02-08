@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useWallet } from "@/contexts/WalletContext";
 import { Header } from "@/components/Header";
 import { MarketCard, MarketCardSkeleton } from "@/components/MarketCard";
@@ -98,21 +99,28 @@ interface MarketsSectionProps {
   onMarketClick: (market: MarketData) => void;
 }
 
+type MarketTab = "open" | "closed";
+
 function MarketsSection({ markets, isLoading, error, onRefresh, onMarketClick }: MarketsSectionProps) {
-  // Filter tabs
-  const openMarkets = markets.filter(m => m.isOpen);
-  const resolvedMarkets = markets.filter(m => m.isResolved);
+  const [activeTab, setActiveTab] = useState<MarketTab>("open");
+  
+  // Filter markets by status
+  const openMarkets = markets.filter(m => m.isOpen && !m.isResolved);
+  const closedMarkets = markets.filter(m => !m.isOpen || m.isResolved);
+  
+  // Get markets for current tab
+  const displayedMarkets = activeTab === "open" ? openMarkets : closedMarkets;
 
   return (
     <div>
       {/* Section Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-white">
             Prediction Markets
           </h2>
           <p className="text-sm text-zinc-400 mt-1">
-            {markets.length} markets • {openMarkets.length} open
+            {markets.length} markets • {openMarkets.length} open • {closedMarkets.length} closed
           </p>
         </div>
         <button
@@ -134,6 +142,46 @@ function MarketsSection({ markets, isLoading, error, onRefresh, onMarketClick }:
             />
           </svg>
           Refresh
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2 mb-6">
+        <button
+          onClick={() => setActiveTab("open")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            activeTab === "open"
+              ? "bg-green-600 text-white shadow-lg shadow-green-900/30"
+              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-300"
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            Open Markets
+            <span className={`px-1.5 py-0.5 rounded text-xs ${
+              activeTab === "open" ? "bg-green-700" : "bg-zinc-700"
+            }`}>
+              {openMarkets.length}
+            </span>
+          </span>
+        </button>
+        <button
+          onClick={() => setActiveTab("closed")}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+            activeTab === "closed"
+              ? "bg-zinc-600 text-white shadow-lg shadow-zinc-900/30"
+              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-300"
+          }`}
+        >
+          <span className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-zinc-500" />
+            Closed / Resolved
+            <span className={`px-1.5 py-0.5 rounded text-xs ${
+              activeTab === "closed" ? "bg-zinc-700" : "bg-zinc-700"
+            }`}>
+              {closedMarkets.length}
+            </span>
+          </span>
         </button>
       </div>
 
@@ -172,7 +220,7 @@ function MarketsSection({ markets, isLoading, error, onRefresh, onMarketClick }:
       )}
 
       {/* Empty State */}
-      {!isLoading && markets.length === 0 && !error && (
+      {!isLoading && displayedMarkets.length === 0 && !error && (
         <div className="text-center py-16">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-zinc-800 flex items-center justify-center">
             <svg className="w-8 h-8 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -180,18 +228,20 @@ function MarketsSection({ markets, isLoading, error, onRefresh, onMarketClick }:
             </svg>
           </div>
           <h3 className="text-lg font-semibold text-white mb-2">
-            No markets yet
+            {activeTab === "open" ? "No open markets" : "No closed markets"}
           </h3>
           <p className="text-zinc-400 max-w-sm mx-auto">
-            Be the first to create a prediction market! Click the + button in the header to get started.
+            {activeTab === "open" 
+              ? "Be the first to create a prediction market! Click the + button in the header to get started."
+              : "No markets have been closed or resolved yet."}
           </p>
         </div>
       )}
 
       {/* Markets Grid */}
-      {markets.length > 0 && (
+      {displayedMarkets.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {markets.map((market) => (
+          {displayedMarkets.map((market) => (
             <MarketCard
               key={market.marketId.toString()}
               market={market}
@@ -216,9 +266,9 @@ function MarketsSection({ markets, isLoading, error, onRefresh, onMarketClick }:
             icon="🟢"
           />
           <StatCard
-            label="Resolved"
-            value={resolvedMarkets.length.toString()}
-            icon="✅"
+            label="Closed / Resolved"
+            value={closedMarkets.length.toString()}
+            icon="🔴"
           />
           <StatCard
             label="Total Volume"
