@@ -8,6 +8,7 @@ import { SendUSDC } from "@/components/SendUSDC";
 import { GatewayDeposit } from "@/components/GatewayDeposit";
 import { GatewayTransfer } from "@/components/GatewayTransfer";
 import { CreateMarketModal } from "@/components/CreateMarketModal";
+import { useEnsName } from "@/hooks/useEns";
 import { arcTestnet, baseSepolia } from "viem/chains";
 import type { SupportedChainId } from "@/hooks/useWallet";
 import type { Address } from "viem";
@@ -44,9 +45,15 @@ export function Header() {
     setShowDropdown(false);
   };
 
+  // ENS name resolution for connected address
+  const { ensName, isLoading: isLoadingEns } = useEnsName(address);
+
   const formatAddress = (addr: string) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
   };
+
+  // Display ENS name if available, otherwise truncated address
+  const displayName = ensName || (address ? formatAddress(address) : "");
 
   return (
     <>
@@ -77,8 +84,11 @@ export function Header() {
                 <button
                   onClick={() => setShowDropdown(!showDropdown)}
                   className="flex items-center gap-2 rounded-full bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-700"
+                  title={address}
                 >
-                  <span>{formatAddress(address)}</span>
+                  <span className={ensName ? "text-blue-400 font-semibold" : ""}>
+                    {isLoadingEns ? formatAddress(address) : displayName}
+                  </span>
                   <svg
                     className={`h-4 w-4 transition-transform ${showDropdown ? "rotate-180" : ""}`}
                     fill="none"

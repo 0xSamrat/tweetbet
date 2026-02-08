@@ -3,7 +3,9 @@
 import * as React from "react";
 import { useGatewayTransfer } from "@/hooks/useGatewayTransfer";
 import { useGatewayBalance } from "@/hooks/useGatewayBalance";
-import type { Address } from "viem";
+import { useAddressResolver } from "@/components/AddressInput";
+import { resolveEnsName } from "@/hooks/useEns";
+import { type Address, isAddress } from "viem";
 
 interface GatewayTransferProps {
   address: Address | undefined;
@@ -29,6 +31,9 @@ export function GatewayTransfer({ address, onSuccess }: GatewayTransferProps) {
     error,
     lastTransfer,
   } = useGatewayTransfer();
+
+  // ENS resolution for recipient
+  const { resolvedAddress, isResolving, isEnsName, isValid } = useAddressResolver(recipient);
 
   const { chainBalances, totalGatewayBalance, refetch } = useGatewayBalance(address);
 
@@ -74,10 +79,26 @@ export function GatewayTransfer({ address, onSuccess }: GatewayTransferProps) {
       return;
     }
 
+    let finalRecipient: Address;
+
+    // Check if input is an ENS name or address
+    if (isAddress(recipient)) {
+      finalRecipient = recipient as Address;
+    } else if (recipient.includes(".")) {
+      // Looks like an ENS name, resolve it
+      const resolved = await resolveEnsName(recipient);
+      if (!resolved) {
+        return;
+      }
+      finalRecipient = resolved as Address;
+    } else {
+      return;
+    }
+
     try {
       await transfer({
         sources,
-        recipient: recipient as Address,
+        recipient: finalRecipient,
       });
       setAmount("");
       setRecipient("");
@@ -140,7 +161,7 @@ export function GatewayTransfer({ address, onSuccess }: GatewayTransferProps) {
       <div>
         <div className="flex items-center justify-between mb-1">
           <label className="block text-xs font-medium text-zinc-400">
-            Recipient Address (on ARC Testnet)
+            Recipient (Address or ENS)
           </label>
           <button
             type="button"
@@ -153,9 +174,37 @@ export function GatewayTransfer({ address, onSuccess }: GatewayTransferProps) {
         <input
           value={recipient}
           onChange={(e) => setRecipient(e.target.value)}
-          placeholder="0x..."
+          placeholder="Address or ENS (e.g., vitalik.eth)"
           className="w-full rounded-lg border border-zinc-600 bg-zinc-800 px-3 py-2.5 text-sm text-white placeholder-zinc-400 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none font-mono"
         />
+        {/* ENS Resolution Status */}
+        {recipient && (
+          <div className="mt-1">
+            {isAddress(recipient) ? (
+              <span className="text-xs text-green-400 flex items-center gap-1">
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Valid address
+              </span>
+            ) : isEnsName ? (
+              isResolving ? (
+                <span className="text-xs text-blue-400 flex items-center gap-1 animate-pulse">
+                  Resolving ENS...
+                </span>
+              ) : resolvedAddress ? (
+                <span className="text-xs text-green-400 flex items-center gap-1">
+                  <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                  → {`${resolvedAddress.slice(0, 6)}...${resolvedAddress.slice(-4)}`}
+                </span>
+              ) : (
+                <span className="text-xs text-red-400">ENS not found</span>
+              )
+            ) : null}
+          </div>
+        )}
       </div>
 
       {/* Amount */}
@@ -225,7 +274,7 @@ export function GatewayTransfer({ address, onSuccess }: GatewayTransferProps) {
       {/* Transfer Button */}
       <button
         onClick={handleTransfer}
-        disabled={isLoading || !amount || parseFloat(amount) <= 0 || !recipient || insufficientBalance}
+        disabled={isLoading || !amount || parseFloat(amount) <= 0 || !recipient || insufficientBalance || (isEnsName && !isValid)}
         className="w-full rounded-lg bg-gradient-to-r from-green-600 to-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:from-green-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
       >
         {isLoading ? (

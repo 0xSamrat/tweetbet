@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useWallet } from "@/contexts/WalletContext";
 import { useGatewayBalance } from "@/hooks/useGatewayBalance";
+import { useEnsProfile } from "@/hooks/useEns";
 import type { Address } from "viem";
 
 export function WalletInfo() {
@@ -19,6 +20,9 @@ export function WalletInfo() {
   const gatewayBalance = useGatewayBalance(
     walletType === "eoa" ? (address as Address) : undefined
   );
+  
+  // ENS name and avatar resolution
+  const { ensName, avatar: ensAvatar, isLoading: isLoadingEns } = useEnsProfile(address);
   
   const [copied, setCopied] = useState(false);
   const [showBreakdown, setShowBreakdown] = useState(false);
@@ -65,13 +69,44 @@ export function WalletInfo() {
             {walletLabel}
           </span>
         </div>
-        <div className="mt-1 flex items-center gap-2">
-          <p className="font-mono text-sm text-green-500">
-            {truncatedAddress}
-          </p>
+        <div className="mt-2 flex items-center gap-3">
+          {/* ENS Avatar */}
+          {ensAvatar ? (
+            <img 
+              src={ensAvatar} 
+              alt={ensName || ""} 
+              className="w-10 h-10 rounded-full border-2 border-green-500/30"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-green-500/20 to-blue-500/20 flex items-center justify-center border border-green-500/30">
+              <span className="text-lg">👤</span>
+            </div>
+          )}
+          
+          <div className="flex-1">
+            {/* ENS Name or Address */}
+            {isLoadingEns ? (
+              <div className="h-5 w-24 bg-green-800/30 rounded animate-pulse" />
+            ) : ensName ? (
+              <div className="flex flex-col">
+                <span className="font-semibold text-green-300 text-base">
+                  {ensName}
+                </span>
+                <span className="font-mono text-xs text-green-500/70">
+                  {truncatedAddress}
+                </span>
+              </div>
+            ) : (
+              <p className="font-mono text-sm text-green-500">
+                {truncatedAddress}
+              </p>
+            )}
+          </div>
+          
+          {/* Copy Button */}
           <button
             onClick={handleCopy}
-            className="p-1 rounded hover:bg-green-800/30 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-green-800/30 transition-colors"
             title={copied ? "Copied!" : "Copy address"}
           >
             {copied ? (
@@ -85,7 +120,7 @@ export function WalletInfo() {
             )}
           </button>
         </div>
-        <p className="mt-1 text-xs text-green-500/70">
+        <p className="mt-2 text-xs text-green-500/70">
           {gasLabel}
         </p>
       </div>
