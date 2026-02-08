@@ -318,24 +318,6 @@ export function CreateMarketModal({ isOpen, onClose, onSuccess }: CreateMarketMo
                   </>
                 )}
               </button>
-
-              {/* Divider */}
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-zinc-700" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-zinc-900 text-zinc-500">or create manually</span>
-                </div>
-              </div>
-
-              {/* Manual Entry Button */}
-              <button
-                onClick={() => setStep("review")}
-                className="w-full py-3 px-4 rounded-md border border-zinc-700 text-zinc-300 font-medium hover:bg-zinc-800 transition-colors"
-              >
-                Create Without AI
-              </button>
             </div>
           ) : (
             /* Step 2: Review & Customize */
